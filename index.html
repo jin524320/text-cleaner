@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.26</title>
+<title>텍스트 정리 도구 v3.3.27</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -275,7 +275,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.26</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.27</span></h1>
   </header>
 
   <div class="toolbar">
@@ -432,7 +432,11 @@ const DEFAULT_RULE_SETTINGS = {
   unifyQuotes: false,
   // 줄 끝/다음 줄 앞에 공백이 없으면 낱말 중간에서 끊긴 것으로 보고 띄어쓰기 없이 붙인다.
   // 원래 공백이 없던 파일에는 낱말이 붙어버리므로 기본 OFF.
-  restoreWordBreaks: false
+  restoreWordBreaks: false,
+  // 문장부호만 바로잡는 옵션(글자는 건드리지 않음). 결과 글자가 달라지므로 기본 OFF.
+  fixFullwidthComma: false,
+  fixReversedQuote: false,
+  fixMixedBrackets: false
 };
 
 const ruleSettings = { ...DEFAULT_RULE_SETTINGS };
@@ -449,6 +453,9 @@ const RULE_SETTING_ITEMS = [
     ['indentFirstLine', '문단 첫 줄 들여쓰기 — 모든 문단에 전각 공백 1칸 추가 (예외 없음)'],
     ['unifyEllipsis', '말줄임표 통일 — 점 3개 이상(...)을 … 문자로 바꿈 (문단 나누는 방식은 그대로)'],
     ['unifyQuotes', '따옴표 통일 — 둥근 따옴표(“ ” ‘ ’)를 곧은 따옴표(" \')로 바꿈 (문단 나누는 방식은 그대로)'],
+    ['fixFullwidthComma', '전각 쉼표 바로잡기 — 한글 글에 섞인 ，를 일반 쉼표(,)로 바꿈 (글자는 그대로, 문장부호만 고침)'],
+    ['fixReversedQuote', '뒤집힌 따옴표 바로잡기 — 대사 끝(.?!… 뒤)에 잘못 찍힌 여는 따옴표 “ ‘를 닫는 따옴표 ” ’로 바꿈'],
+    ['fixMixedBrackets', '괄호 모양 맞추기 — 한 줄 안에서 전각/반각이 섞인 괄호 짝(［…] 등)을 여는 괄호에 맞춤'],
     ['restoreWordBreaks', '낱말 중간 줄바꿈 복원 — 줄 끝과 다음 줄 처음에 공백이 없으면 띄어쓰기 없이 붙임 (글자 수 기준으로 자동 줄바꿈된 파일용. 원래 공백이 없는 파일에는 켜지 마세요)']
 ];
 
@@ -475,6 +482,7 @@ let lastBuffer = null;
 let lastFileName = '';
 // 마지막 처리의 경고 목록. 저장 등으로 상태줄 문구가 바뀌어도 '자세히 보기'를 다시 붙이는 데 쓴다.
 let lastWarnings = [];
+let lastFixes = []; // 직전 처리에서 자동으로 바로잡은 문장부호 기록
 
 
 /* ========================================================================
@@ -612,6 +620,7 @@ async function loadFile(file) {
   // 결과가 어긋나지 않게 한다.
   outputArea.value = '';
   lastWarnings = [];
+  lastFixes = [];
   setResultButtonsDisabled(true);
 
   try {
@@ -649,6 +658,7 @@ encodingSelect.addEventListener('change', () => {
   // 어긋난 결과가 그대로 저장될 수 있다(v3.2.4의 새 파일 불러오기와 같은 이유).
   outputArea.value = '';
   lastWarnings = [];
+  lastFixes = [];
   setResultButtonsDisabled(true);
   statusEl.textContent = `"${lastFileName}"을(를) ${used}(으)로 다시 읽었습니다.`;
   statusEl.className = 'status';
@@ -953,6 +963,87 @@ function collapseInternalSpaces(line) {
  *   먼저 지우고 나서 뒤쪽에 공백이 필요한지 판단해야 "안녕!  살자"처럼
  *   공백이 중복으로 남는 사고를 막을 수 있다.
  */
+/* ========================================================================
+ * 문장부호 자동 바로잡기 (옵션, 기본 꺼짐)
+ * ------------------------------------------------------------------------
+ * 글자(한글·영문·숫자)는 건드리지 않고 문장부호의 "모양"만 고친다. 확실한 경우만 고치고,
+ * 애매하면 그대로 둔다(경고가 따로 알려 줌). 한 줄 안에서만 판단한다.
+ * 반환: { text: 고친 줄, fixes: [{ kind, before, after }] }
+ * ====================================================================== */
+// 괄호 짝: 여는 괄호 → 닫는 괄호. 전각/반각이 따로 있고, 같은 종류끼리 한 "계열"로 본다.
+const FIX_BRACKET_CLOSE = { '(': ')', '（': '）', '[': ']', '［': '］', '{': '}', '｛': '｝' };
+const FIX_BRACKET_FAMILY = { '(': 'p', '（': 'p', ')': 'p', '）': 'p', '[': 's', '［': 's', ']': 's', '］': 's', '{': 'c', '｛': 'c', '}': 'c', '｝': 'c' };
+
+function fixPunctuation(line, opts) {
+  const fixes = [];
+  const chars = Array.from(line);
+  // 고친 자리 앞뒤 몇 글자를 보여 주기 위한 조각(목록용).
+  const around = (i, len = 1) => chars.slice(Math.max(0, i - 6), i + len + 6).join('');
+
+  // 1) 전각 쉼표 ，→ , : 한글 글에서만. 일본어·중국어 글(가나/한자 이웃)은 그대로 둔다.
+  //    다음이 낱말로 이어지면 공백도 하나 넣는다(전각 쉼표가 눈으로는 공백을 포함하고 있었기 때문). 1，000 같은 숫자는 붙여 둔다.
+  if (opts.fixFullwidthComma && line.includes('，') && /[가-힣]/.test(line)) {
+    for (let i = 0; i < chars.length; i++) {
+      if (chars[i] !== '，') continue;
+      const prev = chars[i - 1], next = chars[i + 1];
+      const cjk = /[\u3040-\u30FF\u3400-\u9FFF]/;
+      if ((prev && cjk.test(prev)) || (next && cjk.test(next))) continue;
+      const before = around(i);
+      const needSpace = next && /[\p{L}\p{N}“‘「『(\[]/u.test(next) && !(prev && /\d/.test(prev) && /\d/.test(next));
+      chars[i] = needSpace ? ', ' : ',';
+      fixes.push({ kind: '전각 쉼표', before, after: around(i, 1) });
+    }
+  }
+
+  // 2) 줄 끝의 뒤집힌 따옴표: 문장부호(.?!…~) 바로 뒤, 줄 맨 끝에 놓인 여는 따옴표 “ ‘ 가
+  //    그 앞에 닫히지 않은 같은 종류 여는 따옴표가 있을 때만 닫는 따옴표로 바꾼다.
+  if (opts.fixReversedQuote) {
+    let e = chars.length - 1;
+    while (e >= 0 && /\s/.test(chars[e])) e--;
+    const pairs = { '“': ['“', '”'], '‘': ['‘', '’'] };
+    if (e > 0 && pairs[chars[e]]) {
+      const [open, close] = pairs[chars[e]];
+      let p = e - 1;
+      while (p >= 0 && /\s/.test(chars[p])) p--;
+      if (p >= 0 && /[.?!…~]/.test(chars[p])) {
+        let depth = 0;
+        for (let i = 0; i < e; i++) {
+          if (chars[i] === open) depth++;
+          else if (chars[i] === close && depth > 0) depth--;
+        }
+        if (depth > 0) {
+          const before = around(e);
+          chars[e] = close;
+          fixes.push({ kind: '뒤집힌 따옴표', before, after: around(e) });
+        }
+      }
+    }
+  }
+
+  // 3) 한 줄 안에서 전각/반각이 섞인 괄호 짝: 가장 최근에 연 괄호와 같은 계열의 닫는 괄호가 오면
+  //    여는 괄호의 짝 모양으로 맞춘다. 짝이 없거나 줄을 넘어가는 괄호는 건드리지 않는다.
+  if (opts.fixMixedBrackets) {
+    const stack = [];
+    for (let i = 0; i < chars.length; i++) {
+      const ch = chars[i];
+      if (FIX_BRACKET_CLOSE[ch]) { stack.push(ch); continue; }
+      const fam = FIX_BRACKET_FAMILY[ch];
+      if (!fam) continue;
+      const top = stack[stack.length - 1];
+      if (!top || FIX_BRACKET_FAMILY[top] !== fam) continue;
+      const want = FIX_BRACKET_CLOSE[top];
+      if (want !== ch) {
+        const before = around(i);
+        chars[i] = want;
+        fixes.push({ kind: '괄호 모양', before, after: around(i) });
+      }
+      stack.pop();
+    }
+  }
+
+  return { text: chars.join(''), fixes };
+}
+
 function normalizeLine(rawLine, opts) {
   let line = rawLine;
 
@@ -1336,6 +1427,9 @@ function processText(raw, opts) {
   // 그래야 원래 분리돼 있던 문단이 종결부호 규칙 때문에 다시 합쳐지지 않는다.
   let hadBlankBefore = false;
   const lineInfos = [];
+  const rawByLine = new Map(); // 원본 줄 번호 → 원문 줄(문단 단위 고침 기록의 raw 용)
+  const autoFixes = []; // 자동으로 바로잡은 문장부호 기록: { lineNo, kind, before, after }
+  const anyFix = opts.fixFullwidthComma || opts.fixReversedQuote || opts.fixMixedBrackets;
 
   for (let rawIndex = 0; rawIndex < rawLines.length; rawIndex++) {
     const rawLine = rawLines[rawIndex];
@@ -1346,6 +1440,7 @@ function processText(raw, opts) {
       continue;
     }
 
+    rawByLine.set(rawIndex + 1, rawLine.replace(/^[ \t\u00A0\u3000]+/, ''));
     lineInfos.push({
       text: rawLine.replace(/^[ \t\u00A0\u3000]+/, ''),
       leadSpace: /^[ \t\u00A0\u3000]/.test(rawLine),
@@ -1428,17 +1523,27 @@ function processText(raw, opts) {
 
   const segments = [];
   let current = null;
+  let currentStartLine = 0; // 지금 만들고 있는 문단이 시작된 원본 줄 번호
   let currentTrailSpace = false; // current의 마지막 조각 끝에 공백이 있었는지
   let currentState = createMergeState(warnings);
 
-  function pushSegment(text, type) {
+  function pushSegment(text, type, lineNo = 0) {
     if (text !== '') {
-      segments.push({ text, type });
+      segments.push({ text, type, lineNo }); // lineNo: 이 문단이 시작된 원본 줄 번호(자동 고침 기록용)
     }
   }
 
   for (const info of lineInfos) {
-    const originalLine = info.text;
+    // 문장부호 바로잡기는 줄 자르기(규칙 11)보다 먼저 한다. info.text는 원문 그대로 두어
+    // 경고의 "이동" 버튼이 원본 칸에서 같은 줄을 찾을 수 있게 한다.
+    let originalLine = info.text;
+    if (anyFix) {
+      const fixed = fixPunctuation(originalLine, opts);
+      if (fixed.fixes.length) {
+        originalLine = fixed.text;
+        fixed.fixes.forEach((f) => autoFixes.push({ lineNo: info.lineNo, raw: info.text, ...f }));
+      }
+    }
     const logicalLines = opts.rule11
       ? splitQuotedTerminalLines(originalLine)
       : [originalLine];
@@ -1461,7 +1566,7 @@ function processText(raw, opts) {
       if (type === LINE_KIND.SEPARATOR || type === LINE_KIND.TITLE || type === LINE_KIND.BOXED) {
         if (current !== null) {
           noteIfLeftOpen(currentState);
-          pushSegment(trimTrailingSpace(current), LINE_KIND.NORMAL);
+          pushSegment(trimTrailingSpace(current), LINE_KIND.NORMAL, currentStartLine);
           current = null;
           currentState = createMergeState(warnings);
         }
@@ -1474,6 +1579,7 @@ function processText(raw, opts) {
 
       if (current === null) {
         current = line;
+        currentStartLine = info.lineNo;
         currentTrailSpace = trailSpace;
         currentState = createMergeState(warnings);
         updateMergeState(currentState, line, info.lineNo, info.text);
@@ -1490,8 +1596,9 @@ function processText(raw, opts) {
         k === 0 && info.hadBlankBefore
       )) {
         noteIfLeftOpen(currentState);
-        pushSegment(trimTrailingSpace(current), LINE_KIND.NORMAL);
+        pushSegment(trimTrailingSpace(current), LINE_KIND.NORMAL, currentStartLine);
         current = line;
+        currentStartLine = info.lineNo;
         currentTrailSpace = trailSpace;
         currentState = createMergeState(warnings);
         updateMergeState(currentState, line, info.lineNo, info.text);
@@ -1523,11 +1630,24 @@ function processText(raw, opts) {
 
   if (current !== null) {
     noteIfLeftOpen(currentState);
-    pushSegment(trimTrailingSpace(current), LINE_KIND.NORMAL);
+    pushSegment(trimTrailingSpace(current), LINE_KIND.NORMAL, currentStartLine);
   }
 
   if (segments.length === 0) {
-    return { text: '', segmentCount: 0, openWarnings: warnings };
+    return { text: '', segmentCount: 0, openWarnings: warnings, autoFixes };
+  }
+
+  // 뒤집힌 따옴표는 문단이 다 합쳐진 뒤에도 한 번 더 본다: 여러 줄짜리 대사의 마지막 줄 끝(…했습니다.“)은
+  // 여는 따옴표가 앞 줄에 있어서, 줄 하나만 보는 앞쪽 검사로는 알 수 없다.
+  if (opts.fixReversedQuote) {
+    for (const segment of segments) {
+      if (segment.type !== LINE_KIND.NORMAL) continue;
+      const fixed = fixPunctuation(segment.text, { fixReversedQuote: true });
+      if (fixed.fixes.length) {
+        segment.text = fixed.text;
+        fixed.fixes.forEach((f) => autoFixes.push({ lineNo: segment.lineNo, raw: rawByLine.get(segment.lineNo) || '', ...f }));
+      }
+    }
   }
 
   // [v3.3] 기호 모양 통일(옵션). 병합 판단이 모두 끝난 뒤에 적용한다.
@@ -1588,7 +1708,9 @@ function processText(raw, opts) {
   return {
     text: result,
     segmentCount: segments.length,
-    openWarnings: warnings
+    openWarnings: warnings,
+    // 줄 번호 순으로 보여 주려고 정렬한다(줄 단위 고침과 문단 단위 고침이 따로 쌓이므로).
+    autoFixes: autoFixes.sort((a, b) => a.lineNo - b.lineNo)
   };
 }
 
@@ -1616,6 +1738,17 @@ function warningsToText(warnings, sourceName) {
     lines.push(`${i + 1}. ${describeWarning(w)}`);
     lines.push(`   ${t.length > 80 ? `${t.slice(0, 80)}…` : t}`);
   });
+  return lines.join('\n');
+}
+
+// 자동으로 바로잡은 문장부호 목록을 글로 만든다(팝업의 '목록 복사/저장'용).
+function fixesToText(fixes, sourceName) {
+  const lines = [
+    `자동으로 고친 문장부호 ${fixes.length}곳${sourceName ? ` — ${sourceName}` : ''}`,
+    '(줄 번호는 원본 칸 기준이며 빈 줄도 센 번호입니다. 여러 줄 문단은 문단이 시작된 줄 번호입니다)',
+    ''
+  ];
+  fixes.forEach((f, i) => lines.push(`${i + 1}. 원본 ${f.lineNo}번째 줄 · ${f.kind}: ${f.before}  →  ${f.after}`));
   return lines.join('\n');
 }
 
@@ -1911,7 +2044,110 @@ async function saveTextFile(suggested, text) {
   return { ok: true };
 }
 
+// 자동으로 바로잡은 문장부호가 있으면 상태줄에 개수와 '고친 곳 보기'를 붙인다.
+function appendFixLink() {
+  if (!lastFixes.length) return;
+  const fixes = lastFixes;
+  statusEl.append(` ✎ 자동으로 고친 문장부호 ${fixes.length}곳 — `);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'detail-btn';
+  btn.textContent = '고친 곳 보기';
+  btn.addEventListener('click', () => openFixWindow(fixes));
+  statusEl.appendChild(btn);
+}
+
+// 고친 곳 팝업: 경고 팝업과 같은 모양. 전 → 후를 보여 주고, 이동 버튼으로 원본 칸의 그 줄을 확인한다.
+function openFixWindow(fixes) {
+  if (document.getElementById('fixModal')) return;
+  const MAX_ROWS = 300;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'fixModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;';
+  const panel = document.createElement('div');
+  panel.style.cssText = 'background:#101214;color:#e9ecef;border:1px solid #292d31;border-radius:8px;padding:22px;width:min(640px,92vw);max-height:80vh;display:flex;flex-direction:column;font-family:Arial,"Malgun Gothic",sans-serif;font-size:14px;box-shadow:0 12px 40px rgba(0,0,0,.5);';
+
+  const h1 = document.createElement('h1');
+  h1.textContent = `자동으로 고친 문장부호 ${fixes.length}곳`;
+  h1.style.cssText = 'margin:0 0 6px;font-size:20px;';
+  const desc = document.createElement('p');
+  desc.textContent = '설정에서 켠 옵션이 문장부호의 모양만 바꾼 곳입니다(글자는 그대로). 원본 칸은 바뀌지 않았습니다. 여러 줄 문단은 문단이 시작된 줄 번호입니다.';
+  desc.style.cssText = 'margin:0 0 14px;color:#aab0b6;font-size:12px;line-height:1.5;';
+
+  const list = document.createElement('div');
+  list.style.cssText = 'overflow:auto;flex:1 1 auto;border-top:1px solid #292d31;';
+  fixes.slice(0, MAX_ROWS).forEach((f) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-bottom:1px solid #292d31;line-height:1.45;';
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1 1 auto;min-width:0;';
+    const head = document.createElement('div');
+    head.style.cssText = 'font-size:13px;';
+    head.textContent = `원본 ${f.lineNo}번째 줄 · ${f.kind}`;
+    const body = document.createElement('div');
+    body.style.cssText = 'margin-top:4px;color:#aab0b6;font-size:12px;font-family:Consolas,"Malgun Gothic",monospace;word-break:break-all;';
+    body.textContent = `${f.before}  →  ${f.after}`;
+    info.append(head, body);
+    const goBtn = document.createElement('button');
+    goBtn.type = 'button';
+    goBtn.textContent = '이동';
+    goBtn.style.cssText = 'flex:0 0 auto;padding:5px 12px;background:#1b1f23;color:#e9ecef;border:1px solid #292d31;border-radius:4px;cursor:pointer;font-size:12px;';
+    goBtn.addEventListener('click', () => { close(); jumpToInputLine(f); });
+    row.append(info, goBtn);
+    list.appendChild(row);
+  });
+  panel.append(h1, desc, list);
+  if (fixes.length > MAX_ROWS) {
+    const more = document.createElement('p');
+    more.textContent = `앞의 ${MAX_ROWS}곳만 표시했습니다. (전체 ${fixes.length}곳 — "목록 복사/저장"에는 모두 담깁니다)`;
+    more.style.cssText = 'margin:10px 0 0;color:#aab0b6;font-size:12px;';
+    panel.appendChild(more);
+  }
+
+  const btnCss = 'padding:8px 14px;background:#1b1f23;color:#e9ecef;border:1px solid #292d31;border-radius:4px;cursor:pointer;font-size:13px;';
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '닫기';
+  closeBtn.style.cssText = 'padding:8px 20px;background:#2f5f47;color:#e9ecef;border:none;border-radius:4px;cursor:pointer;font-size:13px;';
+  const copyListBtn = document.createElement('button');
+  copyListBtn.type = 'button';
+  copyListBtn.textContent = '목록 복사';
+  copyListBtn.style.cssText = btnCss;
+  const saveListBtn = document.createElement('button');
+  saveListBtn.type = 'button';
+  saveListBtn.textContent = '목록 저장';
+  saveListBtn.style.cssText = btnCss;
+  const feedback = document.createElement('span');
+  feedback.style.cssText = 'color:#aab0b6;font-size:12px;';
+  const listText = () => fixesToText(fixes, lastFileName || '');
+  copyListBtn.addEventListener('click', async () => {
+    feedback.textContent = (await copyTextToClipboard(listText())) ? '목록을 복사했습니다.' : '복사하지 못했습니다. "목록 저장"을 이용해 주세요.';
+  });
+  saveListBtn.addEventListener('click', async () => {
+    const result = await saveTextFile(`${sourceFileName}_고친곳목록.txt`, listText());
+    if (result && result.ok) feedback.textContent = '목록을 저장했습니다.';
+    else if (result && result.canceled) feedback.textContent = '저장이 취소되었습니다.';
+    else feedback.textContent = `저장 실패: ${(result && result.error) || '알 수 없는 오류'}`;
+  });
+  const buttonRow = document.createElement('div');
+  buttonRow.style.cssText = 'margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+  buttonRow.append(closeBtn, copyListBtn, saveListBtn, feedback);
+  panel.appendChild(buttonRow);
+
+  function close() {
+    document.removeEventListener('keydown', onKey);
+    overlay.remove();
+  }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  document.addEventListener('keydown', onKey);
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+}
+
 function appendWarningLink() {
+  appendFixLink();
   if (!lastWarnings.length) return;
   const warnings = lastWarnings;
   statusEl.append(` ⚠ 확인이 필요한 곳 ${warnings.length}군데 — `);
@@ -1945,19 +2181,21 @@ processBtn.addEventListener('click', () => {
    * 화면에는 사용자가 이해하기 쉬운 메시지만 표시한다.
    */
   try {
-    const { text, segmentCount, openWarnings: warnings = [] } = processText(raw, opts);
+    const { text, segmentCount, openWarnings: warnings = [], autoFixes = [] } = processText(raw, opts);
     outputArea.value = text;
     setResultButtonsDisabled(false); // 처리 결과가 생겼을 때만 저장 버튼 활성화
     let message = `처리 완료 — ${segmentCount}개 줄/문단으로 정리됨.`;
     statusEl.textContent = message;
     statusEl.className = warnings.length ? 'status' : 'status ok';
     lastWarnings = warnings;
+    lastFixes = autoFixes;
     appendWarningLink();
     refreshStats();
   } catch (error) {
     console.error('텍스트 처리 중 오류:', error);
     outputArea.value = '';
     lastWarnings = [];
+  lastFixes = [];
     setResultButtonsDisabled(true);
     refreshStats();
     statusEl.textContent = '처리 중 오류가 발생했습니다. 브라우저 개발자 도구(F12)의 Console을 확인하세요.';
@@ -2033,6 +2271,7 @@ resetBtn.addEventListener('click', () => {
   // 모르고 처리하면 결과 모양이 조용히 달라졌다. 기본값은 설정 창의 '기본값으로 되돌리기'로 복원한다.
   sourceFileName = 'result';
   lastWarnings = [];
+  lastFixes = [];
   lastBuffer = null;
   lastFileName = '';
   setResultButtonsDisabled(true);

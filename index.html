@@ -321,7 +321,10 @@
         <li>원본 글자는 지우지 않고 공백·줄바꿈만 정리하지만, 중요한 글은 <b>원본을 따로 보관</b>하세요.</li>
       </ol>
     </details>
-    <div style="margin-top:6px;">문의·제보: <a id="contactLink" href="#" style="color:var(--accent);">메일 보내기</a>
+    <div style="margin-top:6px;">문의·제보:
+      <a id="contactGmail" href="#" target="_blank" rel="noopener" style="color:var(--accent);">Gmail로 쓰기</a> ·
+      <a id="contactLink" href="#" style="color:var(--accent);">메일 프로그램으로 쓰기</a> ·
+      <button id="contactCopy" type="button" style="font:inherit;color:var(--accent);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline;">주소 복사</button>
       <span id="contactAddr"></span></div>
   </div>
 </div>
@@ -1937,8 +1940,20 @@ resetBtn.addEventListener('click', () => {
 (function () {
   var addr = 'jin524320' + '@' + 'gmail.com';
   var link = document.getElementById('contactLink');
-  link.href = 'mailto:' + addr + '?subject=' + encodeURIComponent('[텍스트 정리 도구 문의]');
-  document.getElementById('contactAddr').textContent = '(' + addr + ')';
+  var subject = encodeURIComponent('[텍스트 정리 도구 문의]');
+  link.href = 'mailto:' + addr + '?subject=' + subject;
+  document.getElementById('contactGmail').href =
+    'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(addr) + '&su=' + subject;
+  var addrEl = document.getElementById('contactAddr');
+  addrEl.textContent = '(' + addr + ')';
+  // 복사: 최신 방식이 막혀 있으면 주소를 직접 선택해 복사하도록 안내한다.
+  document.getElementById('contactCopy').addEventListener('click', function () {
+    var done = function () { addrEl.textContent = '(' + addr + ') ← 복사됨'; };
+    var fail = function () { addrEl.textContent = '(' + addr + ') ← 복사가 안 되면 주소를 직접 선택해 복사하세요'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(addr).then(done, fail);
+    } else { fail(); }
+  });
 })();
 </script>
 </body>

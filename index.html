@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.27</title>
+<title>텍스트 정리 도구 v3.3.28</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -275,7 +275,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.27</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.28</span></h1>
   </header>
 
   <div class="toolbar">
@@ -290,7 +290,7 @@
       <option value="utf-16be">UTF-16BE</option>
     </select>
     <button id="settingsBtn">설정</button>
-    <button class="primary" id="processBtn">처리하기</button>
+    <button class="primary" id="processBtn" title="단축키: Ctrl+Enter (원본 칸에서)">처리하기</button>
     <button id="downloadBtn" disabled>저장</button>
     <button id="copyBtn" disabled>복사</button>
     <button id="resetBtn">리셋</button>
@@ -318,7 +318,8 @@
         <li>파일을 열거나 끌어다 놓거나, 왼쪽 칸에 글을 붙여넣습니다. 글자가 깨지면 인코딩을 바꿔 보세요.</li>
         <li><b>처리하기</b>를 누르면 오른쪽에 정리된 결과가 나옵니다.</li>
         <li>결과를 확인하고 <b>저장</b>하거나 <b>복사</b>합니다. 노란 경고가 나오면 <b>자세히 보기</b>에서 따옴표 오타 위치를 확인하고, 목록을 복사·저장할 수 있습니다.</li>
-        <li>세부 규칙은 <b>설정</b>에서 켜고 끌 수 있습니다.</li>
+        <li>세부 규칙은 <b>설정</b>에서 켜고 끌 수 있습니다. 설정의 <b>문장부호 바로잡기</b>(기본 꺼짐)를 켜면 전각 쉼표·뒤집힌 따옴표·섞인 괄호를 고치고, 처리 후 <b>고친 곳 보기</b>에서 확인할 수 있습니다.</li>
+        <li>왼쪽 칸에서 <b>Ctrl+Enter</b>(맥은 Cmd+Enter)를 누르면 바로 처리됩니다.</li>
         <li>원본 글자는 지우지 않고 공백·줄바꿈만 정리하지만, 중요한 글은 <b>원본을 따로 보관</b>하세요.</li>
       </ol>
     </details>
@@ -2158,6 +2159,15 @@ function appendWarningLink() {
   detailBtn.addEventListener('click', () => openWarningWindow(warnings));
   statusEl.appendChild(detailBtn);
 }
+
+// 글을 붙여넣은 뒤 마우스 없이 바로 처리하도록 단축키를 둔다.
+// 원본 칸에서만 동작시켜, 설정 창 등 다른 곳에서 실수로 실행되지 않게 한다.
+inputArea.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();  // 칸 안에 줄바꿈이 들어가지 않게 막음
+    processBtn.click();
+  }
+});
 
 processBtn.addEventListener('click', () => {
   const raw = inputArea.value;

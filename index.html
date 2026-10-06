@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.29</title>
+<title>텍스트 정리 도구 v3.3.30</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -256,6 +256,12 @@
     border-radius: 6px;
     resize: vertical; /* 가로는 레이아웃이 깨지므로 세로 크기 조절만 허용 */
     white-space: pre-wrap; /* 줄바꿈/공백을 있는 그대로 보여줘야 결과를 신뢰할 수 있음 */
+    /* 수백만 자 글에서 휠 스크롤이 끊기는 것을 줄인다(1백만 자까지는 원래 부드러움).
+       will-change: 칸을 별도 층으로 올려 스크롤 때 다시 그리는 양을 줄임
+       글자 다듬기 끄기: 보이는 줄을 그릴 때 글자 모양 계산을 줄여 속도를 높임 */
+    will-change: transform;
+    text-rendering: optimizeSpeed;
+    font-kerning: none;
   }
   textarea:focus {
     outline: none;
@@ -275,7 +281,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.29</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.30</span></h1>
   </header>
 
   <div class="toolbar">

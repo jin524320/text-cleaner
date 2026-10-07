@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.32</title>
+<title>텍스트 정리 도구 v3.3.33</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -291,7 +291,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.32</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.33</span></h1>
   </header>
 
   <div class="toolbar">
@@ -349,6 +349,7 @@
         <li>설정의 <b>제목 앞에 ## 붙이기</b>(기본 꺼짐)를 켜면 1화·제2장·Chapter 3·프롤로그 같은 확실한 제목 맨 앞에 <code>## </code>이 붙습니다. 마크다운을 읽는 뷰어·변환기용입니다.</li>
         <li>설정의 <b>긴 문단 나누기</b>(기본 꺼짐)를 켜면 기준 글자 수(기본 300자)보다 긴 설명 문단을 문장 끝에서 나눕니다. 기준은 설정에서 바꿀 수 있습니다.</li>
         <li>상태줄 오른쪽 <b>찾기</b>에 글자를 쓰고 Enter(▼)를 누르면 결과 칸에서 그 글자를 찾아 이동합니다(Shift+Enter 또는 ▲는 이전). "원본에서"로 바꿔 같은 글을 원본 칸에서도 찾으면 어디가 어떻게 고쳐졌는지 비교할 수 있습니다.</li>
+        <li>설정의 <b>구분선 모양 통일</b>은 ***, ---, * * * 처럼 제각각인 구분선을 고른 모양 하나로 맞추고, <b>제목 앞 빈 줄 늘리기</b>는 1화·제2장 같은 확실한 제목 앞에 빈 줄을 한 줄 더 넣습니다. 둘 다 기본 꺼짐입니다.</li>
         <li>왼쪽 칸에서 <b>Ctrl+Enter</b>(맥은 Cmd+Enter)를 누르면 바로 처리됩니다.</li>
         <li>원본 글자는 지우지 않고 공백·줄바꿈만 정리하지만, 중요한 글은 <b>원본을 따로 보관</b>하세요.</li>
       </ol>
@@ -472,11 +473,18 @@ const DEFAULT_RULE_SETTINGS = {
   markdownHeading: false,
   // 긴 문단 나누기: 켜면 splitLongLimit자를 넘는 설명 문단을 문장 끝에서 나눈다. 문단 모양만 바뀌므로 기본 OFF.
   splitLongParagraphs: false,
-  splitLongLimit: 300 // 숫자 설정(100~2000). 설정 창에서 바꾸고, 켜짐/꺼짐 목록(RULE_SETTING_ITEMS)에는 넣지 않는다.
+  splitLongLimit: 300, // 숫자 설정(100~2000). 설정 창에서 바꾸고, 켜짐/꺼짐 목록(RULE_SETTING_ITEMS)에는 넣지 않는다.
+  // 구분선 모양 통일: 켜면 장식용 구분선을 separatorStyle 하나로 맞춘다(모양만 바뀜).
+  unifySeparators: false,
+  separatorStyle: '***', // 글 설정(고르는 값). 켜짐/꺼짐 목록에는 넣지 않는다.
+  // 확실한 제목 앞에 빈 줄을 한 줄 더 넣는다(간격만 바뀜).
+  extraBlankBeforeTitle: false
 };
 
 // [v3.3.31] 긴 문단 나누기 기준값. 설정을 불러오는 코드(applySavedSettings)가 먼저 쓰므로 여기 앞쪽에 둔다
 // (뒤에 두면 const 초기화 전에 호출돼 저장값이 조용히 무시된다).
+// 구분선 모양 선택지. 모두 '구분선'으로 다시 인식되는 모양이라, 한 번 더 처리해도 그대로 유지된다.
+const SEPARATOR_STYLES = ['***', '* * *', '---', '===', '~~~', '◆ ◆ ◆'];
 const SPLIT_LIMIT_MIN = 100, SPLIT_LIMIT_MAX = 2000, SPLIT_LIMIT_DEFAULT = 300;
 const SPLIT_MIN_PIECE = 20; // 너무 짧은 조각이 생기지 않게, 앞뒤 조각이 최소 이만큼은 되는 자리만 쓴다.
 function clampSplitLimit(v) {
@@ -504,6 +512,8 @@ const RULE_SETTING_ITEMS = [
     ['fixMixedBrackets', '괄호 모양 맞추기 — 한 줄 안에서 전각/반각이 섞인 괄호 짝(［…] 등)을 여는 괄호에 맞춤'],
     ['markdownHeading', '제목 앞에 ## 붙이기 — 1화·제2장·Chapter 3·EP.4·프롤로그처럼 확실한 제목 맨 앞에 "## "을 붙임 (마크다운을 읽는 뷰어·변환기용. 짧은 줄을 추측한 제목에는 붙이지 않음)'],
     ['splitLongParagraphs', '긴 문단 나누기 — 설명 문단이 아래 기준 글자 수보다 길면 문장 끝(. ? ! …)에서 여러 문단으로 나눔 (대사·따옴표/괄호 안은 나누지 않음. 문단 모양만 바뀌고 글자는 그대로)'],
+    ['unifySeparators', '구분선 모양 통일 — ***, ---, * * *, ==== 처럼 제각각인 구분선을 아래에서 고른 모양 하나로 맞춤 (구분선은 글이 아닌 장식이라 문단 모양만 바뀜. 기호가 3개 미만이거나 글자가 섞인 줄은 건드리지 않음)'],
+    ['extraBlankBeforeTitle', '제목 앞 빈 줄 늘리기 — 1화·제2장·Chapter 3·프롤로그처럼 확실한 제목 앞에 빈 줄을 한 줄 더 넣어 화가 바뀌는 곳을 눈에 띄게 함 (글 맨 앞, 구분선 뒤, 제목이 이어지는 곳은 그대로)'],
     ['restoreWordBreaks', '낱말 중간 줄바꿈 복원 — 줄 끝과 다음 줄 처음에 공백이 없으면 띄어쓰기 없이 붙임 (글자 수 기준으로 자동 줄바꿈된 파일용. 원래 공백이 없는 파일에는 켜지 마세요)']
 ];
 
@@ -744,6 +754,8 @@ function applySavedSettings(saved) {
   }
   // 숫자 설정: 유한한 숫자만 받고 허용 범위로 맞춘다(깨진 저장값이 처리 결과를 망치지 않게).
   if (saved && Number.isFinite(saved.splitLongLimit)) ruleSettings.splitLongLimit = clampSplitLimit(saved.splitLongLimit);
+  // 구분선 모양: 목록에 있는 값만 받는다(깨진 값이 결과 모양을 망치지 않게).
+  if (saved && SEPARATOR_STYLES.includes(saved.separatorStyle)) ruleSettings.separatorStyle = saved.separatorStyle;
 }
 
 async function loadSettings() {
@@ -1245,6 +1257,15 @@ function splitLongText(text, limit) {
   }
   pieces.push(text.slice(start));
   return pieces;
+}
+
+// [v3.3.33] 통일 대상 구분선: 장식 기호(* - = ~ ◆ 등)와 공백만으로 이뤄지고 기호가 3개 이상인 줄.
+// '◆' 하나, '-' 하나처럼 짧은 줄은 대사 표시나 다른 뜻일 수 있어 건드리지 않는다.
+// 가운뎃점(···)은 침묵 표현으로 쓰이는 경우가 많아 일부러 뺐다.
+const DECOR_SEPARATOR_REGEX = /^[\s*\-=_~#◆◇◈■□●○★☆※▲△▼▽♥♡─━═＊－＝＿～❖✦✧◎]+$/u;
+function isDecorSeparator(text) {
+  const t = text.trim();
+  return DECOR_SEPARATOR_REGEX.test(t) && t.replace(/\s/g, '').length >= 3;
 }
 
 // [v3.3.29] '## ' 표시: 번호·표지가 분명한 제목에만 붙인다(짧은 줄을 추측한 제목, '제목: ○○' 표지형은 제외).
@@ -2007,6 +2028,16 @@ function processText(raw, opts) {
     segments.push(...expanded);
   }
 
+  // [v3.3.33] 구분선 모양 통일(옵션). 이미 구분선으로 가려진 줄 중 장식 기호뿐인 줄만 같은 모양으로 바꾼다.
+  if (opts.unifySeparators) {
+    const style = SEPARATOR_STYLES.includes(opts.separatorStyle) ? opts.separatorStyle : SEPARATOR_STYLES[0];
+    for (const segment of segments) {
+      if (segment.type !== LINE_KIND.SEPARATOR || segment.text === style || !isDecorSeparator(segment.text)) continue;
+      autoFixes.push({ lineNo: segment.lineNo, raw: rawByLine.get(segment.lineNo) || '', kind: '구분선 통일', before: segment.text, after: style });
+      segment.text = style;
+    }
+  }
+
   // [v3.3] 기호 모양 통일(옵션). 병합 판단이 모두 끝난 뒤에 적용한다.
   // 이유: 병합 판단은 열림/닫힘이 구분되는 둥근 따옴표(“ ”)에서 더 정확하다.
   // 판단 전에 곧은 따옴표로 바꾸면 문단 구조까지 달라질 수 있어, 모양만 바꾸도록 마지막에 처리한다.
@@ -2066,6 +2097,9 @@ function processText(raw, opts) {
       // 5번 규칙은 구분선만 특별 취급한다.
       // 구분선은 장면 전환 등 시각적으로 분리되는 지점이므로,
       // 일반 줄보다 넓은 빈 줄 2개를 넣어 눈에 띄게 구분한다.
+      blankLineCount = 2;
+    } else if (opts.extraBlankBeforeTitle && b.type === LINE_KIND.TITLE && a.type !== LINE_KIND.TITLE && isConfidentHeading(b.text)) {
+      // [v3.3.33] 확실한 제목 앞은 한 줄 더 띄운다. 제목이 이어지는 곳(앞도 제목)은 붙여 둔다.
       blankLineCount = 2;
     } else {
       // 일반 줄 ↔ 일반 줄, 제목/장/화/EP.숫자 ↔ 일반 줄,
@@ -2167,6 +2201,16 @@ function openSettingsWindow() {
   });
   limitRow.append('기준 글자 수', limitInput, `자 (${SPLIT_LIMIT_MIN}~${SPLIT_LIMIT_MAX}, 기본 ${SPLIT_LIMIT_DEFAULT})`);
 
+  // 구분선 모양 고르는 칸(체크박스 아래에 붙인다).
+  const sepRow = document.createElement('div');
+  sepRow.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px 10px 34px;border-bottom:1px solid #292d31;font-size:13px;color:#aab0b6;';
+  const sepSelect = document.createElement('select');
+  SEPARATOR_STYLES.forEach((st) => { const o = document.createElement('option'); o.value = st; o.textContent = st; sepSelect.appendChild(o); });
+  sepSelect.value = ruleSettings.separatorStyle;
+  sepSelect.style.cssText = 'padding:4px 6px;background:#1b1f23;color:#e9ecef;border:1px solid #292d31;border-radius:4px;font-size:13px;';
+  sepSelect.addEventListener('change', () => { ruleSettings.separatorStyle = sepSelect.value; saveSettings(); });
+  sepRow.append('바꿀 모양', sepSelect);
+
   items.forEach(([key, label]) => {
     const row = document.createElement('label');
     row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 8px;border-bottom:1px solid #292d31;cursor:pointer;line-height:1.45;';
@@ -2180,6 +2224,7 @@ function openSettingsWindow() {
     row.append(input, text);
     checks.appendChild(row);
     if (key === 'splitLongParagraphs') checks.appendChild(limitRow);
+    if (key === 'unifySeparators') checks.appendChild(sepRow);
   });
 
   const closeBtn = document.createElement('button');
@@ -2195,6 +2240,7 @@ function openSettingsWindow() {
     saveSettings();
     checks.querySelectorAll('input[type=checkbox]').forEach((box, i) => { box.checked = ruleSettings[items[i][0]]; });
     limitInput.value = ruleSettings.splitLongLimit;
+    sepSelect.value = ruleSettings.separatorStyle;
   });
 
   // 닫을 때 키보드 이벤트도 같이 정리해, 여러 번 열어도 리스너가 쌓이지 않게 한다.
@@ -2460,7 +2506,7 @@ function openFixWindow(fixes) {
   h1.textContent = `자동으로 고친 곳 ${fixes.length}곳`;
   h1.style.cssText = 'margin:0 0 6px;font-size:20px;';
   const desc = document.createElement('p');
-  desc.textContent = '설정에서 켠 옵션이 자동으로 고친 곳입니다(문장부호 모양, 제목 앞 ## 표시, 긴 문단 나눔). 원본 칸은 바뀌지 않았습니다. 여러 줄 문단은 문단이 시작된 줄 번호입니다.';
+  desc.textContent = '설정에서 켠 옵션이 자동으로 고친 곳입니다(문장부호 모양, 제목 앞 ## 표시, 긴 문단 나눔, 구분선 통일). 원본 칸은 바뀌지 않았습니다. 여러 줄 문단은 문단이 시작된 줄 번호입니다.';
   desc.style.cssText = 'margin:0 0 14px;color:#aab0b6;font-size:12px;line-height:1.5;';
 
   const list = document.createElement('div');

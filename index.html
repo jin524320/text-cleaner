@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.34</title>
+<title>텍스트 정리 도구 v3.3.35</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -274,6 +274,8 @@
     min-height: 16px; /* 메시지가 없을 때도 레이아웃이 위아래로 흔들리지 않게 높이 고정 */
   }
   .status.ok { color: var(--accent); }
+  /* 확인이 필요한 곳이 있을 때(따옴표/괄호 미닫힘 등)는 노란색으로 눈에 띄게 함 */
+  .status.warn { color: #e0b84a; }
   /* 찾기 줄: 상태줄 오른쪽 빈자리에 띄운다(float). 별도 줄로 넣으면 기본 창 높이(720px)에서 스크롤이 생김 */
   .searchbar { float: right; display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: var(--dim); }
   .searchbar select, .searchbar input {
@@ -291,7 +293,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.34</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.35</span></h1>
   </header>
 
   <div class="toolbar">
@@ -2054,7 +2056,8 @@ function processText(raw, opts) {
       });
     }
     segments.length = 0;
-    segments.push(...expanded);
+    // push(...expanded)는 문단이 십수만 개면 한 번에 넘길 수 있는 개수를 넘어 멈춘다(수백만 자 글). 하나씩 넣는다.
+    for (const piece of expanded) segments.push(piece);
   }
 
   // [v3.3.33] 구분선 모양 통일(옵션). 이미 구분선으로 가려진 줄 중 장식 기호뿐인 줄만 같은 모양으로 바꾼다.
@@ -2624,6 +2627,7 @@ function appendWarningLink() {
   appendFixLink();
   if (!lastWarnings.length) return;
   const warnings = lastWarnings;
+  statusEl.classList.add('warn'); // 경고가 있으면 상태줄을 노랗게
   statusEl.append(` ⚠ 확인이 필요한 곳 ${warnings.length}군데 — `);
   const detailBtn = document.createElement('button');
   detailBtn.type = 'button';

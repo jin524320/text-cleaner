@@ -78,6 +78,8 @@
 
 이상한 결과나 개선 의견은 사이트 화면 맨 아래의 **문의·제보** 링크로 보내 주세요. 메일 주소는 **jin524320@gmail.com** 입니다.
 
+이름이나 메일 주소를 밝히고 싶지 않다면 **익명으로 제보하기**(구글 폼)를 이용하세요. 로그인 없이 쓸 수 있고, 적은 내용만 전송됩니다. 폼 주소: https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header
+
 제보하실 때는 문제가 생기는 **짧은 글 일부**와, 사용한 **설정**(켜 둔 항목)을 함께 적어 주시면 확인이 쉽습니다. (저작권이 있는 글은 문제가 되는 몇 줄만 보내 주세요.)
 
 ## 면책

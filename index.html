@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.36</title>
+<title>텍스트 정리 도구 v3.3.37</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -293,7 +293,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.36</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.37</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -353,6 +353,7 @@
         <li>설정의 <b>긴 문단 나누기</b>(기본 꺼짐)를 켜면 기준 글자 수(기본 300자)보다 긴 설명 문단을 문장 끝에서 나눕니다. 기준은 설정에서 바꿀 수 있습니다.</li>
         <li>상태줄 오른쪽 <b>찾기</b>에 글자를 쓰고 Enter(▼)를 누르면 결과 칸에서 그 글자를 찾아 이동합니다(Shift+Enter 또는 ▲는 이전). "원본에서"로 바꿔 같은 글을 원본 칸에서도 찾으면 어디가 어떻게 고쳐졌는지 비교할 수 있습니다.</li>
         <li>설정의 <b>구분선 모양 통일</b>은 ***, ---, * * * 처럼 제각각인 구분선을 고른 모양 하나로 맞추고, <b>제목 앞 빈 줄 늘리기</b>는 1화·제2장 같은 확실한 제목 앞에 빈 줄을 한 줄 더 넣습니다. 둘 다 기본 꺼짐입니다.</li>
+        <li>줄 사이마다 빈 줄이 끼어 문장이 끊긴 글(일정 글자 수에서 꺾인 글)은 자동으로 알아보고 이어 붙입니다. 자동으로 안 잡히는 짧은 글은 설정의 <b>줄 꺾인 글 처리</b>를 <b>항상 켜기</b>로 바꾸세요. 평범한 글에서는 켜지 마세요(문단 구분이 사라집니다).</li>
         <li>왼쪽 칸에서 <b>Ctrl+Enter</b>(맥은 Cmd+Enter)를 누르면 바로 처리됩니다.</li>
         <li>원본 글자는 지우지 않고 공백·줄바꿈만 정리하지만, 중요한 글은 <b>원본을 따로 보관</b>하세요.</li>
       </ol>
@@ -469,6 +470,10 @@ const DEFAULT_RULE_SETTINGS = {
   // 줄 끝/다음 줄 앞에 공백이 없으면 낱말 중간에서 끊긴 것으로 보고 띄어쓰기 없이 붙인다.
   // 원래 공백이 없던 파일에는 낱말이 붙어버리므로 기본 OFF.
   restoreWordBreaks: false,
+  // [v3.3.37] 줄 꺾인 글 처리: 'auto'(글을 보고 꺾인 글일 때만) / 'on'(항상) / 'off'(안 함).
+  // 줄 사이마다 빈 줄이 낀 꺾인 글은 빈 줄이 문단 표시가 아니라 군더더기라 무시해야 정리된다.
+  // 하지만 문단마다 빈 줄을 둔 정상 글에서는 빈 줄이 유일한 문단 표시라 'auto'는 확실한 글에서만 켠다.
+  wrappedFileMode: 'auto', // 고르는 값. 켜짐/꺼짐 목록(RULE_SETTING_ITEMS)에는 넣지 않는다.
   // 문장부호만 바로잡는 옵션(글자는 건드리지 않음). 결과 글자가 달라지므로 기본 OFF.
   fixFullwidthComma: false,
   fixReversedQuote: false,
@@ -489,6 +494,9 @@ const DEFAULT_RULE_SETTINGS = {
 // (뒤에 두면 const 초기화 전에 호출돼 저장값이 조용히 무시된다).
 // 구분선 모양 선택지. 모두 '구분선'으로 다시 인식되는 모양이라, 한 번 더 처리해도 그대로 유지된다.
 const SEPARATOR_STYLES = ['***', '* * *', '---', '===', '~~~', '◆ ◆ ◆'];
+// [v3.3.37] 줄 꺾인 글 처리 방식과 설정 창에 보일 이름.
+const WRAPPED_MODES = ['auto', 'on', 'off'];
+const WRAPPED_MODE_LABELS = { auto: '자동 판정 (기본)', on: '항상 켜기', off: '끄기' };
 const SPLIT_LIMIT_MIN = 100, SPLIT_LIMIT_MAX = 2000, SPLIT_LIMIT_DEFAULT = 300;
 const SPLIT_MIN_PIECE = 20; // 너무 짧은 조각이 생기지 않게, 앞뒤 조각이 최소 이만큼은 되는 자리만 쓴다.
 function clampSplitLimit(v) {
@@ -761,6 +769,8 @@ function applySavedSettings(saved) {
   if (saved && Number.isFinite(saved.splitLongLimit)) ruleSettings.splitLongLimit = clampSplitLimit(saved.splitLongLimit);
   // 구분선 모양: 목록에 있는 값만 받는다(깨진 값이 결과 모양을 망치지 않게).
   if (saved && SEPARATOR_STYLES.includes(saved.separatorStyle)) ruleSettings.separatorStyle = saved.separatorStyle;
+  // 줄 꺾인 글 처리: 목록에 있는 값만 받는다(예전 저장값에는 없어 기본 'auto'가 유지된다).
+  if (saved && WRAPPED_MODES.includes(saved.wrappedFileMode)) ruleSettings.wrappedFileMode = saved.wrappedFileMode;
 }
 
 async function loadSettings() {
@@ -1552,6 +1562,50 @@ function analyzeLineEnding(line, meta) {
   return { type: 'none' };
 }
 
+// [v3.3.37] "일정 글자 수로 줄이 꺾이고 줄 사이마다 빈 줄이 낀 글"인지 판정한다.
+// 신호: 문장부호 없이 '꽉 찬 길이'(그 글에서 긴 줄 길이의 80% 이상)로 끝난 줄 뒤에 빈 줄이 정확히 1개 있는 자리.
+// 꺾인 글은 이런 자리가 전체 줄의 25~40%이고, 문단마다 빈 줄을 둔 정상 글은 거의 없다
+// (샘플 5,589개 중 5% 이상인 글은 6개뿐이고 모두 꺾인 글). 확실한 글만 켜려고 5% 선을 쓴다.
+// 애매한 글은 설정에서 '항상 켜기'로 직접 켠다.
+const WRAPPED_MIN_LINES = 30;       // 이보다 짧은 글은 판단하지 않는다.
+const WRAPPED_FULL_RATIO = 0.8;     // 긴 줄 길이의 이 비율 이상이면 '꽉 찬 줄'
+const WRAPPED_DETECT_RATIO = 0.05;  // 그런 자리가 전체 줄의 이 비율 이상이면 꺾인 글
+const WRAPPED_CLOSED_END = /["”’'」』】》〉）\]\)>]$/; // 닫는 따옴표·괄호로 끝난 줄은 대사가 끝난 것(문단 경계)
+
+function detectWrappedFile(rawLines) {
+  const lines = []; // 빈 줄이 아닌 줄: [다듬은 글, 원본 줄 위치]
+  for (let i = 0; i < rawLines.length; i++) {
+    if (isBlankLine(rawLines[i])) continue;
+    // 보이지 않는 글자(너비 0 문자)가 줄 끝에 붙은 글을 '문장부호 없이 끝난 줄'로 오판하지 않도록 먼저 지운다.
+    lines.push([rawLines[i].replace(INVISIBLE_CHARS_REGEX, '').trim(), i]);
+  }
+  if (lines.length < WRAPPED_MIN_LINES) return false;
+
+  const lens = lines.map((x) => x[0].length).sort((a, b) => a - b);
+  const fullLen = WRAPPED_FULL_RATIO * lens[Math.floor(lens.length * 0.95)]; // 95번째 백분위 = 그 글의 '긴 줄'
+
+  let hits = 0;         // 신호 A: 꽉 찬 줄로 끝나고 뒤에 빈 줄 1개
+  const cands = [];     // 신호 B: 문장부호 없이 끝나고 뒤에 빈 줄 1개인 줄의 길이(꽉 찼는지는 따지지 않음)
+  for (let k = 0; k < lines.length - 1; k++) {
+    const [t, i] = lines[k];
+    if (lines[k + 1][1] - i !== 2) continue; // 사이에 빈 줄이 정확히 1개인 자리만
+    if (WRAPPED_CLOSED_END.test(t) || analyzeLineEnding(t, null).type !== 'none') continue;
+    cands.push(t.length);
+    if (t.length >= fullLen) hits++;         // 꽉 찬 줄만(상태창·효과음·제목 같은 짧은 줄은 제외)
+  }
+  if (hits >= lines.length * WRAPPED_DETECT_RATIO) return true;
+
+  // 신호 B(보조): 긴 줄이 섞여 '꽉 찬 길이' 기준이 너무 높아진 글을 구하려는 것.
+  // 후보가 많고(20% 이상), 길이가 25자 이상이며, 길이가 거의 한 값(±3)에 몰려 있으면 꺾인 글이다.
+  // 정상 글의 후보는 길이가 들쭉날쭉(몰림 10~40%)해서 걸리지 않는다.
+  if (cands.length < lines.length * 0.2) return false;
+  cands.sort((a, b) => a - b);
+  const med = cands[cands.length >> 1];
+  if (med < 25) return false;
+  const near = cands.filter((x) => Math.abs(x - med) <= 3).length;
+  return near >= cands.length * 0.85;
+}
+
 // 따옴표/괄호가 이 줄 수를 넘도록 안 닫히면 원본 오타로 보고 포기한다.
 // 긴 대사·시스템창이 잘리지 않도록 넉넉하게 잡았다.
 const MAX_OPEN_LINES = 12;
@@ -1836,6 +1890,12 @@ function processText(raw, opts) {
 
   const rawLines = raw.split(/\r\n|\r|\n/);
 
+  // [v3.3.37] 줄 꺾인 글이면 빈 줄을 무시한다. 이 글에서 빈 줄은 문단 표시가 아니라 꺾인 줄 사이의 군더더기라
+  // 지워도 잃는 정보가 없고, 지운 뒤에는 빈 줄이 없는 글과 똑같이(종결부호가 있는 줄에서만 문단을 끊어) 처리된다.
+  const wrappedMode = WRAPPED_MODES.includes(opts.wrappedFileMode) ? opts.wrappedFileMode : 'off';
+  const wrappedBy = wrappedMode === 'on' ? 'on' : (wrappedMode === 'auto' && detectWrappedFile(rawLines) ? 'auto' : null);
+  const ignoreBlankLines = wrappedBy !== null;
+
   // [v3.3.3] 빈 줄은 결과에 복사하지 않되 "이 줄 앞에 원본 빈 줄이 있었는지"는 기록해 둔다.
   // 그래야 원래 분리돼 있던 문단이 종결부호 규칙 때문에 다시 합쳐지지 않는다.
   let hadBlankBefore = false;
@@ -1847,7 +1907,7 @@ function processText(raw, opts) {
   for (let rawIndex = 0; rawIndex < rawLines.length; rawIndex++) {
     const rawLine = rawLines[rawIndex];
     if (isBlankLine(rawLine)) {
-      if (lineInfos.length > 0) {
+      if (lineInfos.length > 0 && !ignoreBlankLines) {
         hadBlankBefore = true;
       }
       continue;
@@ -2065,7 +2125,7 @@ function processText(raw, opts) {
 
   if (segments.length === 0) {
     attachOcrHints(warnings, rawLines);
-    return { text: '', segmentCount: 0, openWarnings: warnings, autoFixes };
+    return { text: '', segmentCount: 0, openWarnings: warnings, autoFixes, wrappedBy };
   }
 
   // 뒤집힌 따옴표는 문단이 다 합쳐진 뒤에도 한 번 더 본다: 여러 줄짜리 대사의 마지막 줄 끝(…했습니다.“)은
@@ -2194,6 +2254,7 @@ function processText(raw, opts) {
     text: result,
     segmentCount: segments.length,
     openWarnings: warnings,
+    wrappedBy, // 줄 꺾인 글 처리가 적용된 방식: 'auto' | 'on' | null
     // 줄 번호 순으로 보여 주려고 정렬한다(줄 단위 고침과 문단 단위 고침이 따로 쌓이므로).
     autoFixes: autoFixes.sort((a, b) => a.lineNo - b.lineNo)
   };
@@ -2301,6 +2362,19 @@ function openSettingsWindow() {
   sepSelect.addEventListener('change', () => { ruleSettings.separatorStyle = sepSelect.value; saveSettings(); });
   sepRow.append('바꿀 모양', sepSelect);
 
+  // [v3.3.37] 줄 꺾인 글 처리 방식 고르는 칸(체크박스 목록의 '낱말 중간 줄바꿈 복원' 아래에 붙인다).
+  const wrapRow = document.createElement('div');
+  wrapRow.style.cssText = 'padding:10px 8px 12px;border-bottom:1px solid #292d31;font-size:13px;line-height:1.45;';
+  const wrapTitle = document.createElement('div');
+  wrapTitle.textContent = '줄 꺾인 글 처리 — 글자 수 기준으로 줄이 꺾이고 줄 사이마다 빈 줄이 낀 글(예: 숨긴 무 / 빈 줄 / 림 고수였다)은 빈 줄을 무시하고 문장부호 없는 줄바꿈을 이어 붙입니다. 자동은 글을 보고 그런 글일 때만 적용하고, 놓치는 글은 항상 켜기로 직접 켜세요. 문단마다 빈 줄이 있는 일반 글에서 항상 켜면 문단이 합쳐질 수 있습니다.';
+  wrapTitle.style.cssText = 'color:#e9ecef;margin-bottom:8px;';
+  const wrapSelect = document.createElement('select');
+  WRAPPED_MODES.forEach((m) => { const o = document.createElement('option'); o.value = m; o.textContent = WRAPPED_MODE_LABELS[m]; wrapSelect.appendChild(o); });
+  wrapSelect.value = ruleSettings.wrappedFileMode;
+  wrapSelect.style.cssText = 'padding:4px 6px;background:#1b1f23;color:#e9ecef;border:1px solid #292d31;border-radius:4px;font-size:13px;';
+  wrapSelect.addEventListener('change', () => { ruleSettings.wrappedFileMode = wrapSelect.value; saveSettings(); });
+  wrapRow.append(wrapTitle, wrapSelect);
+
   let lastGroup = null;
   items.forEach(([key, label, group]) => {
     // 묶음이 바뀌는 곳마다 작은 제목을 한 번 넣는다.
@@ -2324,6 +2398,7 @@ function openSettingsWindow() {
     row.append(input, text);
     checks.appendChild(row);
     if (key === 'splitLongParagraphs') checks.appendChild(limitRow);
+    if (key === 'restoreWordBreaks') checks.appendChild(wrapRow);
     if (key === 'unifySeparators') checks.appendChild(sepRow);
   });
 
@@ -2341,6 +2416,7 @@ function openSettingsWindow() {
     checks.querySelectorAll('input[type=checkbox]').forEach((box) => { box.checked = ruleSettings[box.dataset.key]; });
     limitInput.value = ruleSettings.splitLongLimit;
     sepSelect.value = ruleSettings.separatorStyle;
+    wrapSelect.value = ruleSettings.wrappedFileMode;
   });
 
   // 닫을 때 키보드 이벤트도 같이 정리해, 여러 번 열어도 리스너가 쌓이지 않게 한다.
@@ -2742,10 +2818,12 @@ processBtn.addEventListener('click', () => {
    * 화면에는 사용자가 이해하기 쉬운 메시지만 표시한다.
    */
   try {
-    const { text, segmentCount, openWarnings: warnings = [], autoFixes = [] } = processText(raw, opts);
+    const { text, segmentCount, openWarnings: warnings = [], autoFixes = [], wrappedBy = null } = processText(raw, opts);
     outputArea.value = text;
     setResultButtonsDisabled(false); // 처리 결과가 생겼을 때만 저장 버튼 활성화
     let message = `처리 완료 — ${segmentCount}개 줄/문단으로 정리됨.`;
+    // 자동 판정으로 켜졌을 때만 알린다(사용자가 직접 '항상 켜기'를 고른 경우는 이미 알고 있다).
+    if (wrappedBy === 'auto') message += ' (줄 꺾인 글로 판단해 빈 줄을 무시하고 이어 붙임)';
     statusEl.textContent = message;
     statusEl.className = warnings.length ? 'status' : 'status ok';
     lastWarnings = warnings;

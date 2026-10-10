@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.38</title>
+<title>텍스트 정리 도구 v3.3.39</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -293,7 +293,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.38</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.39</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -318,13 +318,13 @@
   <div class="panes">
     <div class="pane">
       <div class="pane-label">원본<span class="pane-stats" id="inputStats"></span></div>
-      <textarea id="inputArea" placeholder="여기에 텍스트를 붙여넣거나, 위에서 파일을 열어주세요."></textarea>
+      <textarea id="inputArea" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="여기에 텍스트를 붙여넣거나, 위에서 파일을 열어주세요."></textarea>
     </div>
     <div class="pane">
       <div class="pane-label">처리 결과<span class="pane-stats" id="outputStats"></span></div>
       <!-- readonly인 이유: 결과창은 "처리하기"를 다시 눌러야 갱신되는 파생 데이터라서
            사용자가 직접 수정하면 원본과 결과가 어긋나 혼란을 줄 수 있음 -->
-      <textarea id="outputArea" placeholder="처리 결과가 여기에 표시됩니다." readonly></textarea>
+      <textarea id="outputArea" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="처리 결과가 여기에 표시됩니다." readonly></textarea>
     </div>
   </div>
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.37</title>
+<title>텍스트 정리 도구 v3.3.38</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -293,7 +293,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.37</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.38</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -348,7 +348,7 @@
         <li>파일을 열거나 끌어다 놓거나, 왼쪽 칸에 글을 붙여넣습니다. 글자가 깨지면 인코딩을 바꿔 보세요.</li>
         <li><b>처리하기</b>를 누르면 오른쪽에 정리된 결과가 나옵니다.</li>
         <li>결과를 확인하고 <b>저장</b>하거나 <b>복사</b>합니다. 노란 경고가 나오면 <b>자세히 보기</b>에서 따옴표 오타 위치를 확인하고, 목록을 복사·저장할 수 있습니다. 스캔 글의 글자 인식(OCR) 오류로 닫는 따옴표가 <code>J</code>·<code>1</code>·<code>?.</code> 처럼 잘못 읽힌 듯한 줄은 노란 글씨로 알려 주며, <b>의심 줄</b> 버튼으로 바로 갈 수 있습니다.</li>
-        <li>세부 규칙은 <b>설정</b>에서 켜고 끌 수 있습니다. 설정의 <b>문장부호 바로잡기</b>(기본 꺼짐)를 켜면 전각 쉼표·뒤집힌 따옴표·섞인 괄호를 고치고, 처리 후 <b>고친 곳 보기</b>에서 확인할 수 있습니다.</li>
+        <li>세부 규칙은 <b>설정</b>에서 켜고 끌 수 있습니다. 자주 쓰는 설정은 설정 맨 위 <b>설정 묶음</b>에 이름을 붙여 저장해 두고 나중에 불러올 수 있습니다. 설정의 <b>문장부호 바로잡기</b>(기본 꺼짐)를 켜면 전각 쉼표·뒤집힌 따옴표·섞인 괄호를 고치고, 처리 후 <b>고친 곳 보기</b>에서 확인할 수 있습니다.</li>
         <li>설정의 <b>제목 앞에 ## 붙이기</b>(기본 꺼짐)를 켜면 1화·제2장·Chapter 3·프롤로그 같은 확실한 제목 맨 앞에 <code>## </code>이 붙습니다. 마크다운을 읽는 뷰어·변환기용입니다.</li>
         <li>설정의 <b>긴 문단 나누기</b>(기본 꺼짐)를 켜면 기준 글자 수(기본 300자)보다 긴 설명 문단을 문장 끝에서 나눕니다. 기준은 설정에서 바꿀 수 있습니다.</li>
         <li>상태줄 오른쪽 <b>찾기</b>에 글자를 쓰고 Enter(▼)를 누르면 결과 칸에서 그 글자를 찾아 이동합니다(Shift+Enter 또는 ▲는 이전). "원본에서"로 바꿔 같은 글을 원본 칸에서도 찾으면 어디가 어떻게 고쳐졌는지 비교할 수 있습니다.</li>
@@ -2315,6 +2315,50 @@ function fixesToText(fixes, sourceName) {
  * 설정 창은 현재 HTML을 새 창으로 직접 생성하므로 별도 HTML 파일이 필요 없다.
  * 체크박스를 변경하면 즉시 부모 창의 ruleSettings에 반영된다.
  * ====================================================================== */
+
+/* ------------------------------------------------------------------------
+ * [v3.3.38] 설정 묶음(프리셋) 저장소
+ * 이유: 글 종류마다 쓰는 설정이 달라 매번 체크박스를 다시 맞추던 불편을 줄이기 위함.
+ * 처리 규칙과 무관한 설정 창 전용 기능이라 CORE_END 뒤에 둔다(처리 결과에 영향 없음).
+ * 모양: [{name, settings}] 배열. 불러올 때 applySavedSettings로 한 번 더 걸러 깨진 값을 막는다.
+ * ---------------------------------------------------------------------- */
+const WEB_PRESETS_KEY = 'textCleanupToolPresets';
+const PRESET_MAX_COUNT = 20;
+const PRESET_MAX_NAME = 20;
+
+// 읽어 온 값에서 이름이 있는 항목만 남긴다(손으로 고친 파일 등에 대비).
+function cleanPresetList(raw) {
+  const out = [];
+  if (!Array.isArray(raw)) return out;
+  for (const p of raw) {
+    if (!p || typeof p.name !== 'string' || !p.name.trim() || typeof p.settings !== 'object' || !p.settings) continue;
+    if (out.some((q) => q.name === p.name)) continue;
+    out.push({ name: p.name.slice(0, PRESET_MAX_NAME), settings: p.settings });
+    if (out.length >= PRESET_MAX_COUNT) break;
+  }
+  return out;
+}
+
+async function loadPresets() {
+  try {
+    if (!hasSettingsApi() || !window.pywebview.api.load_presets) {
+      return cleanPresetList(JSON.parse(localStorage.getItem(WEB_PRESETS_KEY) || 'null'));
+    }
+    return cleanPresetList(await window.pywebview.api.load_presets());
+  } catch (e) { return []; }
+}
+
+async function savePresets(list) {
+  try {
+    if (!hasSettingsApi() || !window.pywebview.api.save_presets) {
+      localStorage.setItem(WEB_PRESETS_KEY, JSON.stringify(list));
+      return true;
+    }
+    const r = await window.pywebview.api.save_presets(list);
+    return !!(r && r.ok);
+  } catch (e) { return false; }
+}
+
 function openSettingsWindow() {
   // 데스크톱 앱(pywebview)에서는 window.open 팝업이 지원되지 않으므로
   // 같은 창 안에 뜨는 모달로 설정 패널을 연다.
@@ -2375,6 +2419,90 @@ function openSettingsWindow() {
   wrapSelect.addEventListener('change', () => { ruleSettings.wrappedFileMode = wrapSelect.value; saveSettings(); });
   wrapRow.append(wrapTitle, wrapSelect);
 
+
+  // [v3.3.38] 설정 묶음: 이름 붙여 저장 / 골라서 불러오기 / 지우기.
+  const presetBox = document.createElement('div');
+  presetBox.style.cssText = 'margin:0 0 14px;padding:12px;border:1px solid #292d31;border-radius:6px;background:#15181b;font-size:13px;';
+  const presetTitle = document.createElement('div');
+  presetTitle.textContent = '설정 묶음 — 지금 설정을 이름 붙여 저장해 두고 나중에 한 번에 불러옵니다.';
+  presetTitle.style.cssText = 'margin-bottom:8px;color:#e9ecef;';
+  const inputCss = 'padding:4px 6px;background:#1b1f23;color:#e9ecef;border:1px solid #292d31;border-radius:4px;font-size:13px;';
+  const btnCss = 'padding:5px 12px;background:#1b1f23;color:#e9ecef;border:1px solid #292d31;border-radius:4px;cursor:pointer;font-size:13px;';
+  const presetRow1 = document.createElement('div');
+  presetRow1.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
+  const presetName = document.createElement('input');
+  presetName.type = 'text'; presetName.maxLength = PRESET_MAX_NAME; presetName.placeholder = '묶음 이름';
+  presetName.style.cssText = inputCss + 'flex:1;min-width:0;';
+  const presetSaveBtn = document.createElement('button');
+  presetSaveBtn.textContent = '지금 설정 저장'; presetSaveBtn.style.cssText = btnCss;
+  presetRow1.append(presetName, presetSaveBtn);
+  const presetRow2 = document.createElement('div');
+  presetRow2.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  const presetSelect = document.createElement('select');
+  presetSelect.style.cssText = inputCss + 'flex:1;min-width:0;';
+  const presetLoadBtn = document.createElement('button');
+  presetLoadBtn.textContent = '불러오기'; presetLoadBtn.style.cssText = btnCss;
+  const presetDelBtn = document.createElement('button');
+  presetDelBtn.textContent = '지우기'; presetDelBtn.style.cssText = btnCss;
+  presetRow2.append(presetSelect, presetLoadBtn, presetDelBtn);
+  const presetMsg = document.createElement('div');
+  presetMsg.style.cssText = 'margin-top:8px;min-height:16px;font-size:12px;color:#7fbf9f;';
+  presetBox.append(presetTitle, presetRow1, presetRow2, presetMsg);
+
+  let presets = [];
+  function showPresetMsg(t) { presetMsg.textContent = t; }
+  function renderPresetList(selectName) {
+    presetSelect.textContent = '';
+    if (!presets.length) {
+      const o = document.createElement('option'); o.value = ''; o.textContent = '(저장된 묶음 없음)'; presetSelect.appendChild(o);
+    }
+    presets.forEach((p) => { const o = document.createElement('option'); o.value = p.name; o.textContent = p.name; presetSelect.appendChild(o); });
+    if (selectName) presetSelect.value = selectName;
+    presetLoadBtn.disabled = presetDelBtn.disabled = !presets.length;
+  }
+  // 불러온 값으로 체크박스·입력칸 화면을 다시 맞춘다(기본값 되돌리기와 같은 방식).
+  function refreshSettingsView() {
+    checks.querySelectorAll('input[type=checkbox]').forEach((box) => { box.checked = ruleSettings[box.dataset.key]; });
+    limitInput.value = ruleSettings.splitLongLimit;
+    sepSelect.value = ruleSettings.separatorStyle;
+    wrapSelect.value = ruleSettings.wrappedFileMode;
+  }
+  loadPresets().then((list) => { presets = list; renderPresetList(); });
+
+  presetSaveBtn.addEventListener('click', async () => {
+    const name = presetName.value.trim().slice(0, PRESET_MAX_NAME);
+    if (!name) { showPresetMsg('묶음 이름을 먼저 적어 주세요.'); return; }
+    const snapshot = JSON.parse(JSON.stringify(ruleSettings)); // 지금 값을 복사해 둠(이후 설정이 바뀌어도 묶음은 그대로)
+    const at = presets.findIndex((p) => p.name === name);
+    if (at < 0 && presets.length >= PRESET_MAX_COUNT) { showPresetMsg(`묶음은 최대 ${PRESET_MAX_COUNT}개까지 저장됩니다. 하나를 지우고 다시 저장하세요.`); return; }
+    const next = presets.slice();
+    if (at >= 0) next[at] = { name, settings: snapshot }; else next.push({ name, settings: snapshot });
+    // 저장에 성공했을 때만 목록을 바꿔, 화면과 실제 저장 내용이 어긋나지 않게 한다.
+    if (await savePresets(next)) {
+      presets = next; renderPresetList(name);
+      showPresetMsg(at >= 0 ? `'${name}' 묶음을 덮어썼습니다.` : `'${name}' 묶음을 저장했습니다.`);
+    } else showPresetMsg('저장하지 못했습니다(브라우저가 저장을 막고 있을 수 있어요).');
+  });
+
+  presetLoadBtn.addEventListener('click', () => {
+    const p = presets.find((q) => q.name === presetSelect.value);
+    if (!p) return;
+    // 묶음에 없는 항목은 기본값이 되도록 먼저 기본값으로 돌린 뒤 덮어쓴다(옛 묶음도 안전).
+    Object.assign(ruleSettings, DEFAULT_RULE_SETTINGS);
+    applySavedSettings(p.settings);
+    saveSettings();
+    refreshSettingsView();
+    showPresetMsg(`'${p.name}' 묶음을 불러왔습니다. 결과에는 "처리하기"를 다시 눌러야 반영됩니다.`);
+  });
+
+  presetDelBtn.addEventListener('click', async () => {
+    const name = presetSelect.value;
+    if (!name) return;
+    const next = presets.filter((q) => q.name !== name);
+    if (await savePresets(next)) { presets = next; renderPresetList(); showPresetMsg(`'${name}' 묶음을 지웠습니다.`); }
+    else showPresetMsg('지우지 못했습니다.');
+  });
+
   let lastGroup = null;
   items.forEach(([key, label, group]) => {
     // 묶음이 바뀌는 곳마다 작은 제목을 한 번 넣는다.
@@ -2429,7 +2557,7 @@ function openSettingsWindow() {
   closeBtn.addEventListener('click', close);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 
-  panel.append(h1, desc, checks, closeBtn, defaultBtn);
+  panel.append(h1, desc, presetBox, checks, closeBtn, defaultBtn);
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
 }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.40</title>
+<title>텍스트 정리 도구 v3.3.41</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -293,7 +293,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.40</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.41</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -354,6 +354,7 @@
         <li>상태줄 오른쪽 <b>찾기</b>에 글자를 쓰고 Enter(▼)를 누르면 결과 칸에서 그 글자를 찾아 이동합니다(Shift+Enter 또는 ▲는 이전). "원본에서"로 바꿔 같은 글을 원본 칸에서도 찾으면 어디가 어떻게 고쳐졌는지 비교할 수 있습니다.</li>
         <li>설정의 <b>구분선 모양 통일</b>은 ***, ---, * * * 처럼 제각각인 구분선을 고른 모양 하나로 맞추고, <b>제목 앞 빈 줄 늘리기</b>는 1화·제2장 같은 확실한 제목 앞에 빈 줄을 한 줄 더 넣습니다. 둘 다 기본 꺼짐입니다.</li>
         <li>줄 사이마다 빈 줄이 끼어 문장이 끊긴 글(일정 글자 수에서 꺾인 글)은 자동으로 알아보고 이어 붙입니다. 자동으로 안 잡히는 짧은 글은 설정의 <b>줄 꺾인 글 처리</b>를 <b>항상 켜기</b>로 바꾸세요. 평범한 글에서는 켜지 마세요(문단 구분이 사라집니다).</li>
+        <li>마침표 뒤에 눈에 안 보이는 글자가 붙어 줄이 이상하게 합쳐지는 글은 설정의 <b>줄 끝 보이지 않는 글자 지우기</b>(기본 꺼짐)를 켜 보세요.</li>
         <li>왼쪽 칸에서 <b>Ctrl+Enter</b>(맥은 Cmd+Enter)를 누르면 바로 처리됩니다.</li>
         <li>원본 글자는 지우지 않고 공백·줄바꿈만 정리하지만, 중요한 글은 <b>원본을 따로 보관</b>하세요.</li>
       </ol>
@@ -487,7 +488,10 @@ const DEFAULT_RULE_SETTINGS = {
   unifySeparators: false,
   separatorStyle: '***', // 글 설정(고르는 값). 켜짐/꺼짐 목록에는 넣지 않는다.
   // 확실한 제목 앞에 빈 줄을 한 줄 더 넣는다(간격만 바뀜).
-  extraBlankBeforeTitle: false
+  extraBlankBeforeTitle: false,
+  // [v3.3.41] 줄 끝에 붙은 보이지 않는 글자(너비 0 공백 등)를 지운다. 마침표 뒤에 이런 글자가 붙으면
+  // 문장 끝으로 인식되지 않아 다음 줄과 합쳐졌다. 글자가 사라지므로 기본 OFF.
+  stripLineEndInvisible: false
 };
 
 // [v3.3.31] 긴 문단 나누기 기준값. 설정을 불러오는 코드(applySavedSettings)가 먼저 쓰므로 여기 앞쪽에 둔다
@@ -516,6 +520,7 @@ const RULE_SETTING_ITEMS = [
     ['rule8', '문장부호(. ? !) 앞 공백 제거', '공백·줄 합치기'],
     ['rule9', '대화문(따옴표로 시작하는 줄)이 앞 문장에 흡수되지 않도록 보호', '공백·줄 합치기'],
     ['rule11', '닫는 따옴표가 붙은 문장부호(.?!) 뒤에서 강제 줄바꿈 (홑낫표·> 와, 조사·어미가 바로 붙은 .’는 / .”라고 는 제외)', '공백·줄 합치기'],
+    ['stripLineEndInvisible', '줄 끝 보이지 않는 글자 지우기 — 마침표 뒤처럼 줄 끝에 붙은 눈에 안 보이는 글자(너비 0 공백 등)를 지워, 문장 끝으로 제대로 인식되게 함 (줄 중간의 글자는 그대로)', '공백·줄 합치기'],
     ['restoreWordBreaks', '낱말 중간 줄바꿈 복원 — 줄 끝과 다음 줄 처음에 공백이 없으면 띄어쓰기 없이 붙임 (글자 수 기준으로 자동 줄바꿈된 파일용. 원래 공백이 없는 파일에는 켜지 마세요)', '공백·줄 합치기'],
     ['rule10', '짧은 줄(20자 이하)이면서 종결부호 없이 끝나면 제목/장 표시로 보고 병합에서 제외', '제목·구분선'],
     ['markdownHeading', '제목 앞에 ## 붙이기 — 1화·제2장·Chapter 3·EP.4·프롤로그처럼 확실한 제목 맨 앞에 "## "을 붙임 (마크다운을 읽는 뷰어·변환기용. 짧은 줄을 추측한 제목에는 붙이지 않음)', '제목·구분선'],
@@ -1914,8 +1919,14 @@ function processText(raw, opts) {
     }
 
     rawByLine.set(rawIndex + 1, rawLine.replace(/^[ \t\u00A0\u3000]+/, ''));
+    // [v3.3.41] 줄 끝(뒤쪽 공백 포함)에 붙은 보이지 않는 글자만 지운다. 줄 중간 글자는 건드리지 않고,
+    // 뒤쪽 공백은 그대로 남겨 기존 공백 규칙(rule7 등)이 평소처럼 처리하게 한다.
+    let lineText = rawLine.replace(/^[ \t\u00A0\u3000]+/, '');
+    if (opts.stripLineEndInvisible) {
+      lineText = lineText.replace(/[\u200B-\u200F\u2060\uFEFF\u00AD \t\u00A0\u3000]+$/, (tail) => tail.replace(INVISIBLE_CHARS_REGEX, ''));
+    }
     lineInfos.push({
-      text: rawLine.replace(/^[ \t\u00A0\u3000]+/, ''),
+      text: lineText,
       leadSpace: /^[ \t\u00A0\u3000]/.test(rawLine),
       hadBlankBefore,
       lineNo: rawIndex + 1 // 원본 칸 기준 줄 번호(빈 줄 포함)

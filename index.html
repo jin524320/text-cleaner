@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.39</title>
+<title>텍스트 정리 도구 v3.3.40</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -293,7 +293,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.39</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.40</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -348,7 +348,7 @@
         <li>파일을 열거나 끌어다 놓거나, 왼쪽 칸에 글을 붙여넣습니다. 글자가 깨지면 인코딩을 바꿔 보세요.</li>
         <li><b>처리하기</b>를 누르면 오른쪽에 정리된 결과가 나옵니다.</li>
         <li>결과를 확인하고 <b>저장</b>하거나 <b>복사</b>합니다. 노란 경고가 나오면 <b>자세히 보기</b>에서 따옴표 오타 위치를 확인하고, 목록을 복사·저장할 수 있습니다. 스캔 글의 글자 인식(OCR) 오류로 닫는 따옴표가 <code>J</code>·<code>1</code>·<code>?.</code> 처럼 잘못 읽힌 듯한 줄은 노란 글씨로 알려 주며, <b>의심 줄</b> 버튼으로 바로 갈 수 있습니다.</li>
-        <li>세부 규칙은 <b>설정</b>에서 켜고 끌 수 있습니다. 자주 쓰는 설정은 설정 맨 위 <b>설정 묶음</b>에 이름을 붙여 저장해 두고 나중에 불러올 수 있습니다. 설정의 <b>문장부호 바로잡기</b>(기본 꺼짐)를 켜면 전각 쉼표·뒤집힌 따옴표·섞인 괄호를 고치고, 처리 후 <b>고친 곳 보기</b>에서 확인할 수 있습니다.</li>
+        <li>세부 규칙은 <b>설정</b>에서 켜고 끌 수 있습니다. 자주 쓰는 설정은 설정 맨 위 <b>설정 묶음</b>에 이름을 붙여 저장해 두고 나중에 불러올 수 있고, 파일로 내보내 다른 브라우저에서 가져올 수도 있습니다. 설정의 <b>문장부호 바로잡기</b>(기본 꺼짐)를 켜면 전각 쉼표·뒤집힌 따옴표·섞인 괄호를 고치고, 처리 후 <b>고친 곳 보기</b>에서 확인할 수 있습니다.</li>
         <li>설정의 <b>제목 앞에 ## 붙이기</b>(기본 꺼짐)를 켜면 1화·제2장·Chapter 3·프롤로그 같은 확실한 제목 맨 앞에 <code>## </code>이 붙습니다. 마크다운을 읽는 뷰어·변환기용입니다.</li>
         <li>설정의 <b>긴 문단 나누기</b>(기본 꺼짐)를 켜면 기준 글자 수(기본 300자)보다 긴 설명 문단을 문장 끝에서 나눕니다. 기준은 설정에서 바꿀 수 있습니다.</li>
         <li>상태줄 오른쪽 <b>찾기</b>에 글자를 쓰고 Enter(▼)를 누르면 결과 칸에서 그 글자를 찾아 이동합니다(Shift+Enter 또는 ▲는 이전). "원본에서"로 바꿔 같은 글을 원본 칸에서도 찾으면 어디가 어떻게 고쳐졌는지 비교할 수 있습니다.</li>
@@ -2447,7 +2447,17 @@ function openSettingsWindow() {
   presetRow2.append(presetSelect, presetLoadBtn, presetDelBtn);
   const presetMsg = document.createElement('div');
   presetMsg.style.cssText = 'margin-top:8px;min-height:16px;font-size:12px;color:#7fbf9f;';
-  presetBox.append(presetTitle, presetRow1, presetRow2, presetMsg);
+  // [v3.3.40] 내보내기/가져오기: 브라우저·컴퓨터마다 따로 저장되는 묶음을 파일로 옮기기 위함.
+  const presetRow3 = document.createElement('div');
+  presetRow3.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:8px;';
+  const presetExportBtn = document.createElement('button');
+  presetExportBtn.textContent = '파일로 내보내기'; presetExportBtn.style.cssText = btnCss;
+  const presetImportBtn = document.createElement('button');
+  presetImportBtn.textContent = '파일에서 가져오기'; presetImportBtn.style.cssText = btnCss;
+  const presetFile = document.createElement('input');
+  presetFile.type = 'file'; presetFile.accept = '.txt,.json,text/plain,application/json'; presetFile.style.display = 'none';
+  presetRow3.append(presetExportBtn, presetImportBtn, presetFile);
+  presetBox.append(presetTitle, presetRow1, presetRow2, presetRow3, presetMsg);
 
   let presets = [];
   function showPresetMsg(t) { presetMsg.textContent = t; }
@@ -2493,6 +2503,43 @@ function openSettingsWindow() {
     saveSettings();
     refreshSettingsView();
     showPresetMsg(`'${p.name}' 묶음을 불러왔습니다. 결과에는 "처리하기"를 다시 눌러야 반영됩니다.`);
+  });
+
+  presetExportBtn.addEventListener('click', async () => {
+    if (!presets.length) { showPresetMsg('내보낼 묶음이 없습니다.'); return; }
+    // 확장자를 .txt로 둔 이유: 앱의 저장 창이 .txt를 기본으로 쓰고, 메모장으로도 열려 확인하기 쉽다.
+    const text = JSON.stringify({ format: 'textCleanupToolPresets', presets }, null, 2);
+    const r = await saveTextFile('설정묶음.txt', text);
+    if (r && r.ok) showPresetMsg(`묶음 ${presets.length}개를 파일로 저장했습니다.`);
+    else if (r && r.canceled) showPresetMsg('내보내기를 취소했습니다.');
+    else showPresetMsg('내보내지 못했습니다.');
+  });
+
+  presetImportBtn.addEventListener('click', () => { presetFile.value = ''; presetFile.click(); });
+  presetFile.addEventListener('change', async () => {
+    const file = presetFile.files && presetFile.files[0];
+    if (!file) return;
+    try {
+      if (file.size > 1000000) throw new Error('too big'); // 묶음 파일은 아주 작다. 엉뚱한 큰 파일은 거절.
+      const data = JSON.parse(await file.text());
+      const incoming = cleanPresetList(Array.isArray(data) ? data : data && data.presets);
+      if (!incoming.length) { showPresetMsg('가져올 묶음이 파일에 없습니다. 내보내기로 만든 파일인지 확인해 주세요.'); return; }
+      // 같은 이름은 파일의 것으로 덮어쓰고, 20개를 넘는 새 묶음은 가져오지 않는다.
+      const next = presets.slice();
+      let added = 0, replaced = 0, skipped = 0;
+      for (const q of incoming) {
+        const at = next.findIndex((x) => x.name === q.name);
+        if (at >= 0) { next[at] = q; replaced++; }
+        else if (next.length < PRESET_MAX_COUNT) { next.push(q); added++; }
+        else skipped++;
+      }
+      if (await savePresets(next)) {
+        presets = next; renderPresetList(incoming[0].name);
+        showPresetMsg(`가져왔습니다: 새로 ${added}개, 덮어쓴 것 ${replaced}개` + (skipped ? `, 개수 제한으로 못 가져온 것 ${skipped}개` : '') + '.');
+      } else showPresetMsg('저장하지 못했습니다.');
+    } catch (e) {
+      showPresetMsg('파일을 읽지 못했습니다. 내보내기로 만든 파일인지 확인해 주세요.');
+    }
   });
 
   presetDelBtn.addEventListener('click', async () => {

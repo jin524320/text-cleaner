@@ -82,11 +82,15 @@
 
 ## 문의 및 제보
 
-이상한 결과나 개선 의견은 사이트 화면 맨 아래의 **문의·제보** 링크로 보내 주세요. 메일: **jin524320@gmail.com**
+이상한 결과나 개선 의견은 사이트 오른쪽 위의 **익명으로 제보하기**(구글 폼, 로그인 불필요)로 보내 주세요: https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header
 
-이름이나 메일 주소를 밝히고 싶지 않다면 **익명으로 제보하기**(구글 폼, 로그인 불필요)를 이용하세요: https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header
+답장이 필요한 문의는 사이트 맨 아래의 메일 주소(**jin524320@gmail.com**)로 보내 주세요.
 
 제보하실 때는 문제가 생기는 **짧은 글 일부**와, 켜 둔 **설정**을 함께 적어 주시면 확인이 쉽습니다. (저작권이 있는 글은 문제가 되는 몇 줄만 보내 주세요.)
+
+## 올리는 분께
+
+웹에 올릴 때는 `웹_빌드.py`가 만든 `index.html`, `manifest.webmanifest`, `sw.js`, `icon-192.png`, `icon-512.png` **5개를 같은 폴더에** 올려야 합니다.
 
 ## 면책
 

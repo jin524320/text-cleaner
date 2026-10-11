@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.41</title>
+<title>텍스트 정리 도구 v3.3.42</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -289,11 +289,15 @@
   /* 상태줄 안의 '자세히 보기'는 링크처럼 보이게(일반 버튼이면 상태줄에서 튀어 보임) */
   .status .detail-btn { background: none; border: none; padding: 0; color: var(--accent); font-size: inherit; text-decoration: underline; cursor: pointer; }
 </style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0f1210">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.41</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.42</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -355,10 +359,14 @@
         <li>설정의 <b>구분선 모양 통일</b>은 ***, ---, * * * 처럼 제각각인 구분선을 고른 모양 하나로 맞추고, <b>제목 앞 빈 줄 늘리기</b>는 1화·제2장 같은 확실한 제목 앞에 빈 줄을 한 줄 더 넣습니다. 둘 다 기본 꺼짐입니다.</li>
         <li>줄 사이마다 빈 줄이 끼어 문장이 끊긴 글(일정 글자 수에서 꺾인 글)은 자동으로 알아보고 이어 붙입니다. 자동으로 안 잡히는 짧은 글은 설정의 <b>줄 꺾인 글 처리</b>를 <b>항상 켜기</b>로 바꾸세요. 평범한 글에서는 켜지 마세요(문단 구분이 사라집니다).</li>
         <li>마침표 뒤에 눈에 안 보이는 글자가 붙어 줄이 이상하게 합쳐지는 글은 설정의 <b>줄 끝 보이지 않는 글자 지우기</b>(기본 꺼짐)를 켜 보세요.</li>
+        <li>이 페이지는 <b>앱처럼 설치</b>할 수 있습니다. 아래 <b>앱으로 설치</b> 버튼을 누르거나, 크롬·엣지는 주소창 오른쪽의 설치 아이콘(모니터에 화살표)을, 아이폰은 공유 버튼의 <b>홈 화면에 추가</b>를 쓰세요. 설치해도 글은 서버로 전송되지 않습니다.</li>
         <li>왼쪽 칸에서 <b>Ctrl+Enter</b>(맥은 Cmd+Enter)를 누르면 바로 처리됩니다.</li>
         <li>원본 글자는 지우지 않고 공백·줄바꿈만 정리하지만, 중요한 글은 <b>원본을 따로 보관</b>하세요.</li>
       </ol>
     </details>
+    <div id="installRow" hidden style="margin-top:6px;">앱처럼 쓰기:
+      <button id="installBtn" type="button" style="font:inherit;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:6px;padding:2px 10px;cursor:pointer;">앱으로 설치</button>
+      <span>바탕화면·시작 메뉴에서 바로 열 수 있어요.</span></div>
     <div style="margin-top:6px;">문의·제보:
       <a id="contactForm" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="color:var(--accent);">익명으로 제보하기</a> ·
       <a id="contactGmail" href="#" target="_blank" rel="noopener" style="color:var(--accent);">Gmail로 쓰기</a> ·
@@ -3123,6 +3131,30 @@ resetBtn.addEventListener('click', () => {
       navigator.clipboard.writeText(addr).then(done, fail);
     } else { fail(); }
   });
+})();
+</script>
+<script>
+(function () {
+  // file:// 로 연 경우에는 서비스워커를 쓸 수 없으므로 http(s)에서만 등록한다.
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('sw.js').catch(function () { /* 등록 실패해도 사이트는 그대로 동작 */ });
+  }
+  var row = document.getElementById('installRow');
+  var btn = document.getElementById('installBtn');
+  var deferred = null;
+  // 이미 앱으로 열린 상태면 설치 안내가 필요 없다.
+  var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); // 브라우저 기본 안내 대신 우리 버튼으로 연다
+    deferred = e;
+    if (!standalone && row) row.hidden = false;
+  });
+  if (btn) btn.addEventListener('click', function () {
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(function () { deferred = null; if (row) row.hidden = true; });
+  });
+  window.addEventListener('appinstalled', function () { if (row) row.hidden = true; });
 })();
 </script>
 </body>

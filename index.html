@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.44</title>
+<title>텍스트 정리 도구 v3.3.45</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -297,7 +297,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.44</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.45</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -359,6 +359,7 @@
         <li>설정의 <b>구분선 모양 통일</b>은 ***, ---, * * * 처럼 제각각인 구분선을 고른 모양 하나로 맞추고, <b>제목 앞 빈 줄 늘리기</b>는 1화·제2장 같은 확실한 제목 앞에 빈 줄을 한 줄 더 넣습니다. 둘 다 기본 꺼짐입니다.</li>
         <li>줄 사이마다 빈 줄이 끼어 문장이 끊긴 글(일정 글자 수에서 꺾인 글)은 자동으로 알아보고 이어 붙입니다. 자동으로 안 잡히는 짧은 글은 설정의 <b>줄 꺾인 글 처리</b>를 <b>항상 켜기</b>로 바꾸세요. 평범한 글에서는 켜지 마세요(문단 구분이 사라집니다).</li>
         <li>한 줄 안에서 서술 바로 뒤에 대사가 붙어 나오는 글(<code>떴다. "선배님…"</code>)은 설정의 <b>서술 뒤 대사 앞에서 줄 나누기</b>(기본 꺼짐)를 켜면 대사 앞에서 문단이 나뉩니다.</li>
+        <li><code>[알림1] [알림2]</code>처럼 괄호 알림이 한 줄에 여러 개 붙은 글은 설정의 <b>[ ] 알림 여러 개 나누기</b>(기본 꺼짐)를 켜면 알림마다 줄이 나뉩니다.</li>
         <li>마침표 뒤에 눈에 안 보이는 글자가 붙어 줄이 이상하게 합쳐지는 글은 설정의 <b>줄 끝 보이지 않는 글자 지우기</b>(기본 꺼짐)를 켜 보세요.</li>
         <li>이 페이지는 <b>앱처럼 설치</b>할 수 있습니다. 아래 <b>앱으로 설치</b> 버튼을 누르거나, 크롬·엣지는 주소창 오른쪽의 설치 아이콘(모니터에 화살표)을, 아이폰은 공유 버튼의 <b>홈 화면에 추가</b>를 쓰세요. 설치해도 글은 서버로 전송되지 않습니다.</li>
         <li>왼쪽 칸에서 <b>Ctrl+Enter</b>(맥은 Cmd+Enter)를 누르면 바로 처리됩니다.</li>
@@ -499,7 +500,9 @@ const DEFAULT_RULE_SETTINGS = {
   // 문장 끝으로 인식되지 않아 다음 줄과 합쳐졌다. 글자가 사라지므로 기본 OFF.
   stripLineEndInvisible: false,
   // [v3.3.44] 서술 바로 뒤에 이어진 대사(`떴다. "선배님…"`) 앞에서 줄을 나눈다. 문단 모양이 바뀌므로 기본 OFF.
-  splitBeforeSpeech: false
+  splitBeforeSpeech: false,
+  // [v3.3.45] `[알림1] [알림2]`처럼 괄호 알림만 한 줄에 여러 개 붙은 줄을 알림마다 나눈다. 문단 모양이 바뀌므로 기본 OFF.
+  splitBoxedBlocks: false
 };
 
 // [v3.3.31] 긴 문단 나누기 기준값. 설정을 불러오는 코드(applySavedSettings)가 먼저 쓰므로 여기 앞쪽에 둔다
@@ -530,6 +533,7 @@ const RULE_SETTING_ITEMS = [
     ['rule11', '닫는 따옴표가 붙은 문장부호(.?!) 뒤에서 강제 줄바꿈 (홑낫표·> 와, 조사·어미가 바로 붙은 .’는 / .”라고 는 제외)', '공백·줄 합치기'],
     ['stripLineEndInvisible', '줄 끝 보이지 않는 글자 지우기 — 마침표 뒤처럼 줄 끝에 붙은 눈에 안 보이는 글자(너비 0 공백 등)를 지워, 문장 끝으로 제대로 인식되게 함 (줄 중간의 글자는 그대로)', '공백·줄 합치기'],
     ['splitBeforeSpeech', '서술 뒤 대사 앞에서 줄 나누기 — 한 줄 안에서 문장이 끝난 뒤(. ? ! …) 바로 이어지는 대사(여는 따옴표)를 새 문단으로 나눔. 예: 메시지가 떴다. "선배님…" → 두 문단. 이미 열린 따옴표 안이거나 마침표 앞이 숫자인 곳은 나누지 않음', '공백·줄 합치기'],
+    ['splitBoxedBlocks', '[ ] 알림 여러 개 나누기 — [시스템 메시지] [다른 메시지]처럼 괄호 알림(대괄호·【】·《》·〈〉·{ })만 한 줄에 여러 개 붙어 있으면 알림마다 새 줄로 나눔 (글이 섞인 줄이나 괄호 안에 괄호가 있는 줄은 건드리지 않음)', '공백·줄 합치기'],
     ['restoreWordBreaks', '낱말 중간 줄바꿈 복원 — 줄 끝과 다음 줄 처음에 공백이 없으면 띄어쓰기 없이 붙임 (글자 수 기준으로 자동 줄바꿈된 파일용. 원래 공백이 없는 파일에는 켜지 마세요)', '공백·줄 합치기'],
     ['rule10', '짧은 줄(20자 이하)이면서 종결부호 없이 끝나면 제목/장 표시로 보고 병합에서 제외', '제목·구분선'],
     ['markdownHeading', '제목 앞에 ## 붙이기 — 1화·제2장·Chapter 3·EP.4·프롤로그처럼 확실한 제목 맨 앞에 "## "을 붙임 (마크다운을 읽는 뷰어·변환기용. 짧은 줄을 추측한 제목에는 붙이지 않음)', '제목·구분선'],
@@ -1151,6 +1155,16 @@ function splitBeforeSpeech(line) {
   }
   result.push(line.slice(last));
   return result;
+}
+
+// [v3.3.45] 괄호 알림이 한 줄에 여러 개 붙은 줄: `[알림1] [알림2]`.
+// BOXED_LINE_REGEX는 괄호 한 쌍이 줄 전체일 때만 알림 줄로 알아봐서, 여러 개가 붙은 줄은 일반 글로 취급돼 나뉘지 않았다.
+// 줄 전체가 알림 조각(공백으로만 구분)일 때만 나눈다: 글이 섞인 줄은 문장의 일부일 수 있어 건드리지 않는다.
+const BOX_BLOCK_SOURCE = String.raw`(?:\[[^\[\]]*\]|《[^《》]*》|【[^【】]*】|〈[^〈〉]*〉|\{[^{}]*\})`;
+const MULTI_BOX_LINE_REGEX = new RegExp(`^${BOX_BLOCK_SOURCE}(?:[ \\t]+${BOX_BLOCK_SOURCE})+[ \\t]*$`);
+function splitBoxedBlocks(line) {
+  if (!MULTI_BOX_LINE_REGEX.test(line)) return [line];
+  return line.match(new RegExp(BOX_BLOCK_SOURCE, 'g'));
 }
 
 // 규칙 11: `."`, `?"`, `!"` 처럼 "문장부호 + 닫는 큰따옴표"가 나올 때마다
@@ -2083,7 +2097,8 @@ function processText(raw, opts) {
       }
     }
     // [v3.3.44] 옵션이 켜져 있으면 서술 뒤 대사 앞에서 먼저 나눈 뒤, 각 조각에 규칙 11을 적용한다.
-    const speechPieces = opts.splitBeforeSpeech ? splitBeforeSpeech(originalLine) : [originalLine];
+    const boxPieces = opts.splitBoxedBlocks ? splitBoxedBlocks(originalLine) : [originalLine];
+    const speechPieces = opts.splitBeforeSpeech ? boxPieces.flatMap((piece) => splitBeforeSpeech(piece)) : boxPieces;
     const logicalLines = opts.rule11
       ? speechPieces.flatMap((piece) => splitQuotedTerminalLines(piece))
       : speechPieces;

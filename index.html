@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.46</title>
+<title>텍스트 정리 도구 v3.3.47</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -297,7 +297,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.46</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.47</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -1855,7 +1855,10 @@ function updateMergeState(state, line, lineNo, rawText) {
     }
 
     if (BRACKET_PAIRS[ch]) {
-      const idx = state.bracketStack.lastIndexOf(BRACKET_PAIRS[ch]);
+      let idx = state.bracketStack.lastIndexOf(BRACKET_PAIRS[ch]);
+      // [v3.3.47] 〈 216화> 처럼 〈로 열고 반각 >로 닫는 제목이 흔하다. 짝으로 안 보면 '안 닫힌 괄호'가 되어
+      // 뒤 줄들을 계속 삼킨다(특히 줄 꺾인 글 처리에서 빈 줄 정보가 없을 때). 〈는 ASCII <와 따로 추적되므로 충돌이 없다.
+      if (idx < 0 && ch === '>') idx = state.bracketStack.lastIndexOf('〈');
       if (idx >= 0) state.bracketStack.splice(idx, 1);
     }
   }
@@ -2008,7 +2011,7 @@ function processText(raw, opts) {
     hadBlankBefore = false;
   }
 
-  function classifySpecialLine(line) {
+  function classifySpecialLine(line, skipShortTitleRule = false) {
     const text = line.trim();
 
     // [v3.3.2] 닫는 따옴표만(또는 ." 처럼) 내려온 줄은 구분선이 아니라 앞 문장에 붙일 조각이다.
@@ -2058,6 +2061,7 @@ function processText(raw, opts) {
 
     const titleLike =
       opts.rule10 &&
+      !skipShortTitleRule && // [v3.3.47] 줄 꺾인 글에서 앞줄이 끊긴 채 이어지는 줄은 이 추측을 건너뛴다(아래 호출부 설명)
       text.length <= TITLE_LIKE_MAX_LENGTH &&
       !TERMINAL_REGEX.test(text) &&
       !QUOTE_START_REGEX.test(text);
@@ -2133,7 +2137,19 @@ function processText(raw, opts) {
       }
 
       // '## 1화'를 다시 처리해도 제목으로 알아보도록, 옵션이 켜져 있으면 표시를 뗀 글로 종류를 판단한다.
-      const type = classifySpecialLine(opts.markdownHeading ? line.replace(HEADING_MARK_REGEX, '') : line);
+      const typeSource = opts.markdownHeading ? line.replace(HEADING_MARK_REGEX, '') : line;
+      let type = classifySpecialLine(typeSource);
+      // [v3.3.47] 줄 꺾인 글에서는 낱말 중간(…사람을 직 / 접 만나 보고 싶다)에서 줄이 끊기므로, 끊긴 뒷부분이
+      // 짧고 마침표가 없다는 이유만으로 제목(rule10)으로 오인되면 앞줄에서 떨어져 나간다.
+      // 앞줄이 글자·숫자로 끝나고(= 낱말 중간에서 끊김) 이 줄도 글자·숫자로 시작할 때만 '짧은 줄 추측'을 건너뛴다.
+      // 좁게 잡은 이유: `-띠링~ 레벨업-` 같은 상태창·알림 줄은 기호로 시작하거나 앞줄이 따옴표·괄호·기호로 끝나서,
+      // 제목으로 보고 따로 두는 기존 결과(작성자 설정)를 그대로 지켜야 한다. 샘플로 확인함.
+      // 1화·제2장·구분선처럼 확실한 제목은 이 예외와 무관하게 그대로 제목이다(classifySpecialLine이 먼저 걸러 냄).
+      if (type === LINE_KIND.TITLE && ignoreBlankLines && opts.rule10 && current !== null &&
+          /[\p{L}\p{N}]$/u.test(currentTail) && /^[\p{L}\p{N}]/u.test(typeSource.trim()) &&
+          classifySpecialLine(typeSource, true) === LINE_KIND.NORMAL) {
+        type = LINE_KIND.NORMAL;
+      }
 
       if (type === LINE_KIND.SEPARATOR || type === LINE_KIND.TITLE || type === LINE_KIND.BOXED) {
         if (current !== null) {

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.48</title>
+<title>텍스트 정리 도구 v3.3.49</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -297,7 +297,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.48</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.49</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -358,6 +358,7 @@
         <li>상태줄 오른쪽 <b>찾기</b>에 글자를 쓰고 Enter(▼)를 누르면 결과 칸에서 그 글자를 찾아 이동합니다(Shift+Enter 또는 ▲는 이전). "원본에서"로 바꿔 같은 글을 원본 칸에서도 찾으면 어디가 어떻게 고쳐졌는지 비교할 수 있습니다.</li>
         <li>설정의 <b>구분선 모양 통일</b>은 ***, ---, * * * 처럼 제각각인 구분선을 고른 모양 하나로 맞추고, <b>제목 앞 빈 줄 늘리기</b>는 1화·제2장 같은 확실한 제목 앞에 빈 줄을 한 줄 더 넣습니다. 둘 다 기본 꺼짐입니다.</li>
         <li>줄 사이마다 빈 줄이 끼어 문장이 끊긴 글(일정 글자 수에서 꺾인 글)은 자동으로 알아보고 이어 붙입니다. 자동으로 안 잡히는 짧은 글은 설정의 <b>줄 꺾인 글 처리</b>를 <b>항상 켜기</b>로 바꾸세요. 평범한 글에서는 켜지 마세요(문단 구분이 사라집니다).</li>
+        <li>앞부분은 정상이고 <b>○화부터만</b> 줄이 꺾인 파일은 설정의 <b>줄 꺾인 글 시작 화</b>에 숫자(예: 216)를 넣으세요(기본 0=사용 안 함). 그 화 제목 줄부터만 줄 꺾인 글 처리를 하고 앞부분은 그대로 둡니다. 채팅 줄(<code>-닉네임 : 말</code>)이 한 문단으로 뭉치면 <b>줄 꺾인 글: 채팅 줄을 새 문단으로</b>(기본 꺼짐)를 켜 보세요.</li>
         <li>한 줄 안에서 서술 바로 뒤에 대사나 [알림]이 붙어 나오는 글(<code>떴다. "선배님…"</code>, <code>울렸다. [패턴 감지]</code>)은 설정의 <b>서술 뒤 대사·알림 앞에서 줄 나누기</b>(기본 꺼짐)를 켜면 그 앞에서 문단이 나뉩니다. <code>…"</code>로 끝난 대사 뒤에 붙은 서술도 함께 나뉩니다.</li>
         <li><code>[알림1] [알림2]</code>처럼 괄호 알림이 한 줄에 여러 개 붙은 글은 설정의 <b>[ ] 알림 여러 개 나누기</b>(기본 꺼짐)를 켜면 알림마다 줄이 나뉩니다.</li>
         <li>마침표 뒤에 눈에 안 보이는 글자가 붙어 줄이 이상하게 합쳐지는 글은 설정의 <b>줄 끝 보이지 않는 글자 지우기</b>(기본 꺼짐)를 켜 보세요.</li>
@@ -505,7 +506,12 @@ const DEFAULT_RULE_SETTINGS = {
   splitBoxedBlocks: false,
   // [v3.3.48] 줄 꺾인 글 처리 중, 열린 따옴표·괄호 안이라도 문장이 끝난 줄 뒤에 새 대사가 오면 문단을 나눈다.
   // 한 사람의 긴 대사가 문장 끝에서 꺾인 글에서는 대사 중간이 쪼개질 수 있어 기본 OFF.
-  wrappedStopAtOpenQuote: false
+  wrappedStopAtOpenQuote: false,
+  // [v3.3.49] ○화부터만 줄이 꺾인 파일용: 0이면 사용 안 함. 숫자(예: 216)를 넣으면 그 화 제목 줄부터 줄 꺾인 글 처리를 적용한다.
+  // 글 전체를 보고 판정하는 '자동'은 꺾인 부분이 작으면 놓치고, '항상 켜기'는 멀쩡한 앞부분을 망가뜨리기 때문에 직접 시작 화를 받는다.
+  wrappedFromChapter: 0, // 숫자 설정. 켜짐/꺼짐 목록(RULE_SETTING_ITEMS)에는 넣지 않는다.
+  // [v3.3.49] 줄 꺾인 글 처리 중 `-닉네임 : 말` 채팅 줄을 새 문단으로 시작한다. 문단 모양이 바뀌므로 기본 OFF.
+  wrappedChatLines: false
 };
 
 // [v3.3.31] 긴 문단 나누기 기준값. 설정을 불러오는 코드(applySavedSettings)가 먼저 쓰므로 여기 앞쪽에 둔다
@@ -517,6 +523,12 @@ const WRAPPED_MODES = ['auto', 'on', 'off'];
 const WRAPPED_MODE_LABELS = { auto: '자동 판정 (기본)', on: '항상 켜기', off: '끄기' };
 const SPLIT_LIMIT_MIN = 100, SPLIT_LIMIT_MAX = 2000, SPLIT_LIMIT_DEFAULT = 300;
 const SPLIT_MIN_PIECE = 20; // 너무 짧은 조각이 생기지 않게, 앞뒤 조각이 최소 이만큼은 되는 자리만 쓴다.
+// [v3.3.49] 시작 화 번호를 0~99999 정수로 맞춘다(빈 칸·글자·음수는 0 = 사용 안 함).
+function clampChapter(v) {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(99999, n);
+}
 function clampSplitLimit(v) {
   const n = Math.round(Number(v));
   if (!Number.isFinite(n)) return SPLIT_LIMIT_DEFAULT;
@@ -538,6 +550,7 @@ const RULE_SETTING_ITEMS = [
     ['splitBoxedBlocks', '[ ] 알림 여러 개 나누기 — [시스템 메시지] [다른 메시지]처럼 괄호 알림(대괄호·【】·《》·〈〉·{ })만 한 줄에 여러 개 붙어 있으면 알림마다 새 줄로 나눔 (글이 섞인 줄이나 괄호 안에 괄호가 있는 줄은 건드리지 않음)', '공백·줄 합치기'],
     ['restoreWordBreaks', '낱말 중간 줄바꿈 복원 — 줄 끝과 다음 줄 처음에 공백이 없으면 띄어쓰기 없이 붙임 (글자 수 기준으로 자동 줄바꿈된 파일용. 원래 공백이 없는 파일에는 켜지 마세요)', '줄 꺾인·스캔 글'],
     ['stripLineEndInvisible', '줄 끝 보이지 않는 글자 지우기 — 마침표 뒤처럼 줄 끝에 붙은 눈에 안 보이는 글자(너비 0 공백 등)를 지워, 문장 끝으로 제대로 인식되게 함 (줄 중간의 글자는 그대로)', '줄 꺾인·스캔 글'],
+    ['wrappedChatLines', '줄 꺾인 글: 채팅 줄을 새 문단으로 — 줄 꺾인 글 처리가 적용될 때, `-닉네임 : 말`처럼 줄 앞에 - 와 이름과 : 가 오는 채팅 줄은 앞줄에 합치지 않고 새 문단으로 시작함. 채팅 줄이 한 문단으로 뭉치는 글용', '줄 꺾인·스캔 글'],
     ['wrappedStopAtOpenQuote', '열린 따옴표가 끝난 문장을 삼키지 않게 — 줄 꺾인 글 처리가 적용될 때, 따옴표·괄호가 안 닫혀 있어도 문장이 . ? ! 로 끝난 줄 다음에 새 대사(따옴표로 시작하는 줄)가 오면 새 문단으로 나눔. 원문의 따옴표·괄호 오타 때문에 여러 줄이 한 문단으로 뭉치는 글용. 한 사람의 긴 대사가 문장 끝에서 줄이 꺾인 글은 대사 중간이 쪼개질 수 있어 필요할 때만 켜세요', '줄 꺾인·스캔 글'],
     ['rule10', '짧은 줄(20자 이하)이면서 종결부호 없이 끝나면 제목/장 표시로 보고 병합에서 제외', '제목·구분선'],
     ['markdownHeading', '제목 앞에 ## 붙이기 — 1화·제2장·Chapter 3·EP.4·프롤로그처럼 확실한 제목 맨 앞에 "## "을 붙임 (마크다운을 읽는 뷰어·변환기용. 짧은 줄을 추측한 제목에는 붙이지 않음)', '제목·구분선'],
@@ -793,6 +806,8 @@ function applySavedSettings(saved) {
   if (saved && SEPARATOR_STYLES.includes(saved.separatorStyle)) ruleSettings.separatorStyle = saved.separatorStyle;
   // 줄 꺾인 글 처리: 목록에 있는 값만 받는다(예전 저장값에는 없어 기본 'auto'가 유지된다).
   if (saved && WRAPPED_MODES.includes(saved.wrappedFileMode)) ruleSettings.wrappedFileMode = saved.wrappedFileMode;
+  // [v3.3.49] 시작 화 번호: 0 이상 정수만 받는다(깨진 값은 0=사용 안 함으로 둔다).
+  if (saved && Number.isFinite(saved.wrappedFromChapter)) ruleSettings.wrappedFromChapter = clampChapter(saved.wrappedFromChapter);
 }
 
 async function loadSettings() {
@@ -1912,6 +1927,12 @@ function shouldMergeLines(currentLine, nextLine, state, currentType, nextType, o
     return true;
   }
 
+  // [v3.3.49] 줄 꺾인 글에서 `-닉네임 : 말` 채팅 줄은 새 문단의 시작이다(옵션 켠 경우만).
+  // 빈 줄 정보가 없는 글이라, 채팅 줄이 앞 문장 끝에 이어 붙어 한 문단으로 뭉치던 것을 막는다.
+  // 이름에는 공백이 들어갈 수 있어 공백을 허용하되, 정상 문장이 걸리지 않게 이름은 20자까지만 본다.
+  if (opts.wrappedActive && opts.wrappedChatLines && /^[-–—]\s*[^:：\s][^:：]{0,19}[:：]\s*\S/.test(next)) {
+    return false;
+  }
   // 열린 따옴표/괄호 내부의 줄바꿈은 문장 종결로 보지 않고 이어붙인다.
   // [v3.3.2] 단, 너무 오래 안 닫히면 원본 오타(닫는 따옴표 누락)로 보고 포기한다.
   // 안 그러면 따옴표 하나가 빠진 곳부터 파일 끝까지 한 문단으로 합쳐진다.
@@ -1964,6 +1985,17 @@ function shouldMergeLines(currentLine, nextLine, state, currentType, nextType, o
   return true;
 }
 
+// [v3.3.49] ○화 제목 줄을 찾는다: 짧은 줄이고 `216화`·`〈 216화>`·`제216화`·`216회`처럼 숫자+화(회)로 시작하는 첫 줄.
+// 숫자 앞에는 글자·숫자가 없어야 한다(1216화가 216화로 잡히지 않게). 본문 중간의 "216화에서…"는 줄이 길어 제외된다.
+function findChapterStartLine(rawLines, chapter) {
+  const re = new RegExp('^[^\\p{L}\\p{N}]{0,6}(?:제\\s*)?' + chapter + '\\s*[화회](?![\\p{L}\\p{N}])', 'u');
+  for (let i = 0; i < rawLines.length; i++) {
+    const t = rawLines[i].trim();
+    if (t.length > 0 && t.length <= 40 && re.test(t)) return i;
+  }
+  return -1;
+}
+
 function processText(raw, opts) {
   /*
    * 처리 순서
@@ -1990,6 +2022,11 @@ function processText(raw, opts) {
   const ignoreBlankLines = wrappedBy !== null;
   // [v3.3.48] 병합 판단에 '줄 꺾인 글 처리 중'임을 알린다. 줄마다 객체를 새로 만들면 큰 글에서 느려지므로 한 번만 만든다.
   const mergeOpts = ignoreBlankLines ? { ...opts, wrappedActive: true } : opts;
+  // [v3.3.49] '○화부터' 지정: 전체가 이미 꺾인 글 처리 중이면 필요 없고, 아니면 그 화 제목 줄(원본 줄 번호 0부터)을 찾는다.
+  // 찾지 못하면 -1이라 아무것도 바뀌지 않는다(잘못 지정해도 글이 망가지지 않게).
+  const wrappedStartRaw = (!ignoreBlankLines && opts.wrappedFromChapter > 0)
+    ? findChapterStartLine(rawLines, opts.wrappedFromChapter) : -1;
+  const sectionOpts = wrappedStartRaw >= 0 ? { ...opts, wrappedActive: true } : opts;
 
   // [v3.3.3] 빈 줄은 결과에 복사하지 않되 "이 줄 앞에 원본 빈 줄이 있었는지"는 기록해 둔다.
   // 그래야 원래 분리돼 있던 문단이 종결부호 규칙 때문에 다시 합쳐지지 않는다.
@@ -2002,7 +2039,8 @@ function processText(raw, opts) {
   for (let rawIndex = 0; rawIndex < rawLines.length; rawIndex++) {
     const rawLine = rawLines[rawIndex];
     if (isBlankLine(rawLine)) {
-      if (lineInfos.length > 0 && !ignoreBlankLines) {
+      // 꺾인 구간(○화부터)에서도 빈 줄은 문단 표시가 아니라 군더더기이므로 무시한다.
+      if (lineInfos.length > 0 && !ignoreBlankLines && !(wrappedStartRaw >= 0 && rawIndex >= wrappedStartRaw)) {
         hadBlankBefore = true;
       }
       continue;
@@ -2019,7 +2057,8 @@ function processText(raw, opts) {
       text: lineText,
       leadSpace: /^[ \t\u00A0\u3000]/.test(rawLine),
       hadBlankBefore,
-      lineNo: rawIndex + 1 // 원본 칸 기준 줄 번호(빈 줄 포함)
+      lineNo: rawIndex + 1, // 원본 칸 기준 줄 번호(빈 줄 포함)
+      wrapped: ignoreBlankLines || (wrappedStartRaw >= 0 && rawIndex >= wrappedStartRaw) // 줄 꺾인 글 처리 대상 줄인지
     });
 
     hadBlankBefore = false;
@@ -2159,7 +2198,7 @@ function processText(raw, opts) {
       // 좁게 잡은 이유: `-띠링~ 레벨업-` 같은 상태창·알림 줄은 기호로 시작하거나 앞줄이 따옴표·괄호·기호로 끝나서,
       // 제목으로 보고 따로 두는 기존 결과(작성자 설정)를 그대로 지켜야 한다. 샘플로 확인함.
       // 1화·제2장·구분선처럼 확실한 제목은 이 예외와 무관하게 그대로 제목이다(classifySpecialLine이 먼저 걸러 냄).
-      if (type === LINE_KIND.TITLE && ignoreBlankLines && opts.rule10 && current !== null &&
+      if (type === LINE_KIND.TITLE && info.wrapped && opts.rule10 && current !== null &&
           /[\p{L}\p{N}]$/u.test(currentTail) && /^[\p{L}\p{N}]/u.test(typeSource.trim()) &&
           classifySpecialLine(typeSource, true) === LINE_KIND.NORMAL) {
         type = LINE_KIND.NORMAL;
@@ -2188,13 +2227,16 @@ function processText(raw, opts) {
         continue;
       }
 
-      if (!shouldMergeLines(
+      // [v3.3.49] ○화 제목 줄은 항상 혼자 한 문단으로 둔다(제목이 첫 본문 줄과 붙어 버리거나 앞줄에 붙지 않게).
+      // 꺾인 글 처리는 빈 줄 정보를 버리므로, 20자 이하 제목 추측(rule10)을 꺼 둔 경우 이렇게 막지 않으면 제목이 본문에 합쳐진다.
+      const chapterBreak = wrappedStartRaw >= 0 && (info.lineNo === wrappedStartRaw + 1 || currentStartLine === wrappedStartRaw + 1);
+      if (chapterBreak || !shouldMergeLines(
         currentTail,
         line,
         currentState,
         LINE_KIND.NORMAL,
         type,
-        mergeOpts,
+        info.wrapped ? (ignoreBlankLines ? mergeOpts : sectionOpts) : opts,
         k === 0 && info.hadBlankBefore,
         currentMeta
       )) {
@@ -2372,6 +2414,7 @@ function processText(raw, opts) {
     segmentCount: segments.length,
     openWarnings: warnings,
     wrappedBy, // 줄 꺾인 글 처리가 적용된 방식: 'auto' | 'on' | null
+    wrappedSectionFound: wrappedStartRaw >= 0, // [v3.3.49] ○화부터 지정의 제목 줄을 찾았는지
     // 줄 번호 순으로 보여 주려고 정렬한다(줄 단위 고침과 문단 단위 고침이 따로 쌓이므로).
     autoFixes: autoFixes.sort((a, b) => a.lineNo - b.lineNo)
   };
@@ -2513,6 +2556,27 @@ function openSettingsWindow() {
   });
   limitRow.append('기준 글자 수', limitInput, `자 (${SPLIT_LIMIT_MIN}~${SPLIT_LIMIT_MAX}, 기본 ${SPLIT_LIMIT_DEFAULT})`);
 
+  // [v3.3.49] '○화부터 줄 꺾인 글' 입력칸. 0 또는 빈 칸이면 사용 안 함(숫자 외 값은 0으로 맞춤).
+  const chapRow = document.createElement('div');
+  chapRow.style.cssText = 'padding:8px 8px 12px;border-bottom:1px solid #292d31;font-size:13px;line-height:1.5;color:#aab0b6;';
+  const chapLine = document.createElement('div');
+  chapLine.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+  const chapInput = document.createElement('input');
+  chapInput.type = 'number';
+  chapInput.min = 0; chapInput.max = 99999; chapInput.step = 1;
+  chapInput.value = ruleSettings.wrappedFromChapter;
+  chapInput.style.cssText = 'width:80px;padding:4px 6px;background:#1b1f23;color:#e9ecef;border:1px solid #292d31;border-radius:4px;font-size:13px;';
+  chapInput.addEventListener('change', () => {
+    ruleSettings.wrappedFromChapter = clampChapter(chapInput.value);
+    chapInput.value = ruleSettings.wrappedFromChapter;
+    saveSettings();
+  });
+  chapLine.append('줄 꺾인 글 시작 화:', chapInput, '화부터 (0 = 사용 안 함)');
+  const chapHelp = document.createElement('div');
+  chapHelp.style.cssText = 'margin-top:4px;font-size:12px;color:#8a9097;';
+  chapHelp.textContent = '앞부분은 정상이고 ○화부터만 줄이 꺾인 파일용입니다. 그 화 제목 줄부터만 줄 꺾인 글 처리를 하고, 앞부분은 그대로 둡니다. 제목 줄을 못 찾으면 아무것도 바뀌지 않습니다.';
+  chapRow.append(chapLine, chapHelp);
+
   // 구분선 모양 고르는 칸(체크박스 아래에 붙인다).
   const sepRow = document.createElement('div');
   sepRow.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px 10px 34px;border-bottom:1px solid #292d31;font-size:13px;color:#aab0b6;';
@@ -2593,6 +2657,7 @@ function openSettingsWindow() {
     limitInput.value = ruleSettings.splitLongLimit;
     sepSelect.value = ruleSettings.separatorStyle;
     wrapSelect.value = ruleSettings.wrappedFileMode;
+    chapInput.value = ruleSettings.wrappedFromChapter;
   }
   loadPresets().then((list) => { presets = list; renderPresetList(); });
 
@@ -2676,7 +2741,7 @@ function openSettingsWindow() {
       gh.style.cssText = 'margin:16px 0 2px;padding:0 8px;font-size:12px;font-weight:bold;color:#7fbf9f;letter-spacing:.02em;';
       checks.appendChild(gh);
       // [v3.3.48] 줄 꺾인 글 처리 방식(자동/항상/끄기)은 이 묶음의 대표 스위치라서 묶음 제목 바로 아래에 둔다.
-      if (group === '줄 꺾인·스캔 글') checks.appendChild(wrapRow);
+      if (group === '줄 꺾인·스캔 글') { checks.appendChild(wrapRow); checks.appendChild(chapRow); }
       lastGroup = group;
     }
     const row = document.createElement('label');
@@ -2710,6 +2775,7 @@ function openSettingsWindow() {
     limitInput.value = ruleSettings.splitLongLimit;
     sepSelect.value = ruleSettings.separatorStyle;
     wrapSelect.value = ruleSettings.wrappedFileMode;
+    chapInput.value = ruleSettings.wrappedFromChapter;
   });
 
   // 닫을 때 키보드 이벤트도 같이 정리해, 여러 번 열어도 리스너가 쌓이지 않게 한다.
@@ -3111,12 +3177,14 @@ processBtn.addEventListener('click', () => {
    * 화면에는 사용자가 이해하기 쉬운 메시지만 표시한다.
    */
   try {
-    const { text, segmentCount, openWarnings: warnings = [], autoFixes = [], wrappedBy = null } = processText(raw, opts);
+    const { text, segmentCount, openWarnings: warnings = [], autoFixes = [], wrappedBy = null, wrappedSectionFound = false } = processText(raw, opts);
     outputArea.value = text;
     setResultButtonsDisabled(false); // 처리 결과가 생겼을 때만 저장 버튼 활성화
     let message = `처리 완료 — ${segmentCount}개 줄/문단으로 정리됨.`;
     // 자동 판정으로 켜졌을 때만 알린다(사용자가 직접 '항상 켜기'를 고른 경우는 이미 알고 있다).
     if (wrappedBy === 'auto') message += ' (줄 꺾인 글로 판단해 빈 줄을 무시하고 이어 붙임)';
+    // [v3.3.49] 시작 화를 지정했는데 그 제목 줄이 없으면 아무것도 적용되지 않았음을 알려, 지정이 먹힌 줄 오해하지 않게 한다.
+    if (wrappedBy === null && opts.wrappedFromChapter > 0) message += wrappedSectionFound ? ` (${opts.wrappedFromChapter}화부터 줄 꺾인 글 처리 적용)` : ` (${opts.wrappedFromChapter}화 제목 줄을 못 찾아 줄 꺾인 글 처리는 적용되지 않음)`;
     statusEl.textContent = message;
     statusEl.className = warnings.length ? 'status' : 'status ok';
     lastWarnings = warnings;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.51</title>
+<title>텍스트 정리 도구 v3.3.52</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -297,7 +297,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.51</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.52</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -358,7 +358,7 @@
         <li>상태줄 오른쪽 <b>찾기</b>에 글자를 쓰고 Enter(▼)를 누르면 결과 칸에서 그 글자를 찾아 이동합니다(Shift+Enter 또는 ▲는 이전). "원본에서"로 바꿔 같은 글을 원본 칸에서도 찾으면 어디가 어떻게 고쳐졌는지 비교할 수 있습니다.</li>
         <li>설정의 <b>구분선 모양 통일</b>은 ***, ---, * * * 처럼 제각각인 구분선을 고른 모양 하나로 맞추고, <b>제목 앞 빈 줄 늘리기</b>는 1화·제2장 같은 확실한 제목 앞에 빈 줄을 한 줄 더 넣습니다. 둘 다 기본 꺼짐입니다.</li>
         <li>줄 사이마다 빈 줄이 끼어 문장이 끊긴 글(일정 글자 수에서 꺾인 글)은 자동으로 알아보고 이어 붙입니다. 자동으로 안 잡히는 짧은 글은 설정의 <b>줄 꺾인 글 처리</b>를 <b>항상 켜기</b>로 바꾸세요. 평범한 글에서는 켜지 마세요(문단 구분이 사라집니다).</li>
-        <li>앞부분은 정상이고 <b>○화부터만</b> 줄이 꺾인 파일은 설정의 <b>줄 꺾인 글 처리</b>를 <b>○화부터</b>로 바꾸고 나타나는 칸에 숫자(예: 216)를 넣으세요. 그 화 제목 줄부터만 처리하고 앞부분은 그대로 둡니다. 채팅 줄(<code>-닉네임 : 말</code>)이 한 문단으로 뭉치면 <b>짧은 줄은 문단 끝으로 보기</b>(기본 꺼짐)를 켜 보세요. 낱말 복원·줄 끝 글자 지우기·열린 따옴표 옵션은 설정의 <b>세부 설정 ▾</b> 안에 있습니다.</li>
+        <li>앞부분은 정상이고 <b>○화부터만</b> 줄이 꺾인 파일은 설정의 <b>줄 꺾인 글 처리</b>를 <b>○화부터</b>로 바꾸고 나타나는 칸에 숫자(예: 216)를 넣으세요. 그 화 제목 줄부터만 처리하고 앞부분은 그대로 둡니다. 채팅 줄(<code>-닉네임 : 말</code>)이 한 문단으로 뭉치면 <b>짧은 줄은 문단 끝으로 보기</b>(기본 꺼짐)를 켜 보세요. 낱말 복원·줄 끝 글자 지우기·열린 따옴표 옵션은 설정의 <b>세부 설정 ▾</b> 안에 있습니다. 스캔 글은 같은 묶음의 <b>스캔 글용으로 맞추기</b> 버튼으로 한 번에 맞추고, 일반 글을 처리할 때는 <b>이 묶음 초기화</b>로 되돌리세요.</li>
         <li>한 줄 안에서 서술 바로 뒤에 대사나 [알림]이 붙어 나오는 글(<code>떴다. "선배님…"</code>, <code>울렸다. [패턴 감지]</code>)은 설정의 <b>서술 뒤 대사·알림 앞에서 줄 나누기</b>(기본 꺼짐)를 켜면 그 앞에서 문단이 나뉩니다. <code>…"</code>로 끝난 대사 뒤에 붙은 서술도 함께 나뉩니다.</li>
         <li><code>[알림1] [알림2]</code>처럼 괄호 알림이 한 줄에 여러 개 붙은 글은 설정의 <b>[ ] 알림 여러 개 나누기</b>(기본 꺼짐)를 켜면 알림마다 줄이 나뉩니다.</li>
         <li>마침표 뒤에 눈에 안 보이는 글자가 붙어 줄이 이상하게 합쳐지는 글은 설정의 <b>줄 끝 보이지 않는 글자 지우기</b>(기본 꺼짐)를 켜 보세요.</li>
@@ -2713,6 +2713,7 @@ function openSettingsWindow() {
     wrapSelect.value = ruleSettings.wrappedFileMode;
     chapInput.value = ruleSettings.wrappedFromChapter;
     syncChapRow();
+    advBox.style.display = ADVANCED_KEYS.some((k) => ruleSettings[k]) ? '' : 'none'; syncAdvBtn();
   }
   loadPresets().then((list) => { presets = list; renderPresetList(); });
 
@@ -2799,6 +2800,36 @@ function openSettingsWindow() {
   advBtn.addEventListener('click', () => { advBox.style.display = advBox.style.display === 'none' ? '' : 'none'; syncAdvBtn(); });
   syncAdvBtn();
 
+  // [v3.3.52] 묶음 제목 아래에 붙는 쓰임 안내(샘플 1,124개 집계: 대부분 빈 줄 문단·들여쓰기 없음·둥근 따옴표라 기본값이 이미 맞음).
+  const GROUP_HINTS = {
+    '기호 모양 통일·바로잡기': '보통은 기본값 그대로 쓰세요. 점 세 개(...)가 섞인 글만 "말줄임표 통일"을 켜면 됩니다. 따옴표 통일은 둥근 따옴표를 곧은 따옴표로 바꾸므로, 대부분의 글(둥근 따옴표)에는 켜지 않는 편이 낫습니다.',
+    '문단 모양': '들여쓰기는 대부분의 웹소설이 쓰지 않으니, 필요할 때만 켜세요.'
+  };
+  // [v3.3.52] 줄 꺾인·스캔 글 묶음의 한 번에 맞추기 / 초기화 버튼. 켜짐/꺼짐 값만 바꾸고 처리 규칙은 건드리지 않는다.
+  // 스캔 글용에 넣은 것은 '항상 켜기'와 '짧은 줄 문단 끝'뿐이다. 낱말 붙이기(띄어쓰기가 사라짐)·열린 따옴표(대사가 쪼개짐)·글자 지우기는
+  // 글마다 달라서 일부러 넣지 않았다. '항상 켜기'는 평범한 글에서 문단을 합치므로, 끝나면 초기화(자동)로 돌아가라고 알려 준다.
+  const scanRow = document.createElement('div');
+  scanRow.style.cssText = 'padding:8px 8px 4px;font-size:12px;color:#8a9097;line-height:1.5;';
+  const scanBtnStyle = 'margin:0 6px 6px 0;padding:6px 12px;background:#1b1f23;color:#e9ecef;border:1px solid #292d31;border-radius:4px;cursor:pointer;font-size:12px;';
+  const scanBtn = document.createElement('button');
+  scanBtn.type = 'button'; scanBtn.textContent = '스캔 글용으로 맞추기'; scanBtn.style.cssText = scanBtnStyle;
+  const scanResetBtn = document.createElement('button');
+  scanResetBtn.type = 'button'; scanResetBtn.textContent = '이 묶음 초기화'; scanResetBtn.style.cssText = scanBtnStyle;
+  const scanMsg = document.createElement('div');
+  scanRow.append(scanBtn, scanResetBtn, scanMsg);
+  const SCAN_KEYS = ['wrappedFileMode', 'wrappedFromChapter', 'wrappedShortLineBreak', 'restoreWordBreaks', 'stripLineEndInvisible', 'wrappedStopAtOpenQuote'];
+  scanBtn.addEventListener('click', () => {
+    ruleSettings.wrappedFileMode = 'on';
+    ruleSettings.wrappedShortLineBreak = true;
+    saveSettings(); refreshSettingsView();
+    scanMsg.textContent = '줄 꺾인 글 처리를 "항상 켜기"로, "짧은 줄은 문단의 끝으로 보기"를 켰습니다. 일반 글을 처리할 때는 "이 묶음 초기화"로 되돌리세요.';
+  });
+  scanResetBtn.addEventListener('click', () => {
+    SCAN_KEYS.forEach((k) => { ruleSettings[k] = DEFAULT_RULE_SETTINGS[k]; });
+    saveSettings(); refreshSettingsView();
+    scanMsg.textContent = '이 묶음을 기본값(자동 판정)으로 되돌렸습니다.';
+  });
+
   let lastGroup = null;
   items.forEach(([key, label, group]) => {
     // 묶음이 바뀌는 곳마다 작은 제목을 한 번 넣는다.
@@ -2808,7 +2839,13 @@ function openSettingsWindow() {
       gh.style.cssText = 'margin:16px 0 2px;padding:0 8px;font-size:12px;font-weight:bold;color:#7fbf9f;letter-spacing:.02em;';
       checks.appendChild(gh);
       // [v3.3.48] 줄 꺾인 글 처리 방식(자동/항상/끄기)은 이 묶음의 대표 스위치라서 묶음 제목 바로 아래에 둔다.
-      if (group === '줄 꺾인·스캔 글') { checks.appendChild(wrapRow); checks.appendChild(chapRow); }
+      if (GROUP_HINTS[group]) {
+        const hint = document.createElement('div');
+        hint.textContent = GROUP_HINTS[group];
+        hint.style.cssText = 'padding:2px 8px 6px;font-size:12px;color:#8a9097;line-height:1.5;';
+        checks.appendChild(hint);
+      }
+      if (group === '줄 꺾인·스캔 글') { checks.appendChild(scanRow); checks.appendChild(wrapRow); checks.appendChild(chapRow); }
       lastGroup = group;
     }
     const row = document.createElement('label');
@@ -2847,6 +2884,7 @@ function openSettingsWindow() {
     wrapSelect.value = ruleSettings.wrappedFileMode;
     chapInput.value = ruleSettings.wrappedFromChapter;
     syncChapRow();
+    advBox.style.display = ADVANCED_KEYS.some((k) => ruleSettings[k]) ? '' : 'none'; syncAdvBtn();
   });
 
   // 닫을 때 키보드 이벤트도 같이 정리해, 여러 번 열어도 리스너가 쌓이지 않게 한다.

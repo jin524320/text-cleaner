@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.47</title>
+<title>텍스트 정리 도구 v3.3.48</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -297,7 +297,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.47</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.48</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -502,7 +502,10 @@ const DEFAULT_RULE_SETTINGS = {
   // [v3.3.44·46] 서술 바로 뒤에 이어진 대사(`떴다. "선배님…"`)·[알림] 앞, `…"` 뒤 서술 앞에서 줄을 나눈다. 문단 모양이 바뀌므로 기본 OFF.
   splitBeforeSpeech: false,
   // [v3.3.45] `[알림1] [알림2]`처럼 괄호 알림만 한 줄에 여러 개 붙은 줄을 알림마다 나눈다. 문단 모양이 바뀌므로 기본 OFF.
-  splitBoxedBlocks: false
+  splitBoxedBlocks: false,
+  // [v3.3.48] 줄 꺾인 글 처리 중, 열린 따옴표·괄호 안이라도 문장이 끝난 줄 뒤에 새 대사가 오면 문단을 나눈다.
+  // 한 사람의 긴 대사가 문장 끝에서 꺾인 글에서는 대사 중간이 쪼개질 수 있어 기본 OFF.
+  wrappedStopAtOpenQuote: false
 };
 
 // [v3.3.31] 긴 문단 나누기 기준값. 설정을 불러오는 코드(applySavedSettings)가 먼저 쓰므로 여기 앞쪽에 둔다
@@ -531,10 +534,11 @@ const RULE_SETTING_ITEMS = [
     ['rule8', '문장부호(. ? !) 앞 공백 제거', '공백·줄 합치기'],
     ['rule9', '대화문(따옴표로 시작하는 줄)이 앞 문장에 흡수되지 않도록 보호', '공백·줄 합치기'],
     ['rule11', '닫는 따옴표가 붙은 문장부호(.?!) 뒤에서 강제 줄바꿈 (홑낫표·> 와, 조사·어미가 바로 붙은 .’는 / .”라고 는 제외)', '공백·줄 합치기'],
-    ['stripLineEndInvisible', '줄 끝 보이지 않는 글자 지우기 — 마침표 뒤처럼 줄 끝에 붙은 눈에 안 보이는 글자(너비 0 공백 등)를 지워, 문장 끝으로 제대로 인식되게 함 (줄 중간의 글자는 그대로)', '공백·줄 합치기'],
     ['splitBeforeSpeech', '서술 뒤 대사·알림 앞에서 줄 나누기 — 한 줄 안에서 문장이 끝난 뒤(. ? ! …) 바로 이어지는 대사(여는 따옴표)나 [알림]을 새 문단으로 나눔. 또 …"로 끝난 대사 뒤에 붙은 서술도 나눔. 예: 메시지가 떴다. [패턴 감지] 시간 → 두 문단. 이미 열린 따옴표·괄호 안이거나 마침표 앞이 숫자인 곳, [1] 같은 숫자 주석은 나누지 않음', '공백·줄 합치기'],
     ['splitBoxedBlocks', '[ ] 알림 여러 개 나누기 — [시스템 메시지] [다른 메시지]처럼 괄호 알림(대괄호·【】·《》·〈〉·{ })만 한 줄에 여러 개 붙어 있으면 알림마다 새 줄로 나눔 (글이 섞인 줄이나 괄호 안에 괄호가 있는 줄은 건드리지 않음)', '공백·줄 합치기'],
-    ['restoreWordBreaks', '낱말 중간 줄바꿈 복원 — 줄 끝과 다음 줄 처음에 공백이 없으면 띄어쓰기 없이 붙임 (글자 수 기준으로 자동 줄바꿈된 파일용. 원래 공백이 없는 파일에는 켜지 마세요)', '공백·줄 합치기'],
+    ['restoreWordBreaks', '낱말 중간 줄바꿈 복원 — 줄 끝과 다음 줄 처음에 공백이 없으면 띄어쓰기 없이 붙임 (글자 수 기준으로 자동 줄바꿈된 파일용. 원래 공백이 없는 파일에는 켜지 마세요)', '줄 꺾인·스캔 글'],
+    ['stripLineEndInvisible', '줄 끝 보이지 않는 글자 지우기 — 마침표 뒤처럼 줄 끝에 붙은 눈에 안 보이는 글자(너비 0 공백 등)를 지워, 문장 끝으로 제대로 인식되게 함 (줄 중간의 글자는 그대로)', '줄 꺾인·스캔 글'],
+    ['wrappedStopAtOpenQuote', '열린 따옴표가 끝난 문장을 삼키지 않게 — 줄 꺾인 글 처리가 적용될 때, 따옴표·괄호가 안 닫혀 있어도 문장이 . ? ! 로 끝난 줄 다음에 새 대사(따옴표로 시작하는 줄)가 오면 새 문단으로 나눔. 원문의 따옴표·괄호 오타 때문에 여러 줄이 한 문단으로 뭉치는 글용. 한 사람의 긴 대사가 문장 끝에서 줄이 꺾인 글은 대사 중간이 쪼개질 수 있어 필요할 때만 켜세요', '줄 꺾인·스캔 글'],
     ['rule10', '짧은 줄(20자 이하)이면서 종결부호 없이 끝나면 제목/장 표시로 보고 병합에서 제외', '제목·구분선'],
     ['markdownHeading', '제목 앞에 ## 붙이기 — 1화·제2장·Chapter 3·EP.4·프롤로그처럼 확실한 제목 맨 앞에 "## "을 붙임 (마크다운을 읽는 뷰어·변환기용. 짧은 줄을 추측한 제목에는 붙이지 않음)', '제목·구분선'],
     ['extraBlankBeforeTitle', '제목 앞 빈 줄 늘리기 — 1화·제2장·Chapter 3·프롤로그처럼 확실한 제목 앞에 빈 줄을 한 줄 더 넣어 화가 바뀌는 곳을 눈에 띄게 함 (글 맨 앞, 구분선 뒤, 제목이 이어지는 곳은 그대로)', '제목·구분선'],
@@ -1912,6 +1916,14 @@ function shouldMergeLines(currentLine, nextLine, state, currentType, nextType, o
   // [v3.3.2] 단, 너무 오래 안 닫히면 원본 오타(닫는 따옴표 누락)로 보고 포기한다.
   // 안 그러면 따옴표 하나가 빠진 곳부터 파일 끝까지 한 문단으로 합쳐진다.
   if (state.quoteStack.length || state.bracketStack.length) {
+    // [v3.3.48] 줄 꺾인 글은 빈 줄 정보가 없어, 원문의 따옴표 오타 하나가 뒤 12줄까지 한 문단으로 삼킨다.
+    // 앞줄이 . ? ! 로 확실히 끝났고 다음 줄이 새 대사(따옴표로 시작)이면 대사가 바뀐 것이므로 거기서 끊는다.
+    // 문장 끝이기만 한 경우(긴 대사가 문장 끝에서 꺾임)는 건드리지 않도록 '새 대사 시작'까지 함께 본다.
+    // 상태는 지우지 않아, 호출한 쪽의 '안 닫힘 경고'(noteIfLeftOpen)가 평소대로 동작한다.
+    if (opts.wrappedActive && opts.wrappedStopAtOpenQuote && QUOTE_START_REGEX.test(next) &&
+        analyzeLineEnding(current, meta).type === 'strong') {
+      return false;
+    }
     state.openLineCount = (state.openLineCount || 0) + 1;
     if (state.openLineCount <= MAX_OPEN_LINES) {
       // 새 대사가 시작되는 줄이 열린 따옴표 안으로 흡수되면 따옴표 오타일 가능성이 크다(경고 기준에 사용).
@@ -1976,6 +1988,8 @@ function processText(raw, opts) {
   const wrappedMode = WRAPPED_MODES.includes(opts.wrappedFileMode) ? opts.wrappedFileMode : 'off';
   const wrappedBy = wrappedMode === 'on' ? 'on' : (wrappedMode === 'auto' && detectWrappedFile(rawLines) ? 'auto' : null);
   const ignoreBlankLines = wrappedBy !== null;
+  // [v3.3.48] 병합 판단에 '줄 꺾인 글 처리 중'임을 알린다. 줄마다 객체를 새로 만들면 큰 글에서 느려지므로 한 번만 만든다.
+  const mergeOpts = ignoreBlankLines ? { ...opts, wrappedActive: true } : opts;
 
   // [v3.3.3] 빈 줄은 결과에 복사하지 않되 "이 줄 앞에 원본 빈 줄이 있었는지"는 기록해 둔다.
   // 그래야 원래 분리돼 있던 문단이 종결부호 규칙 때문에 다시 합쳐지지 않는다.
@@ -2180,7 +2194,7 @@ function processText(raw, opts) {
         currentState,
         LINE_KIND.NORMAL,
         type,
-        opts,
+        mergeOpts,
         k === 0 && info.hadBlankBefore,
         currentMeta
       )) {
@@ -2661,6 +2675,8 @@ function openSettingsWindow() {
       gh.textContent = group;
       gh.style.cssText = 'margin:16px 0 2px;padding:0 8px;font-size:12px;font-weight:bold;color:#7fbf9f;letter-spacing:.02em;';
       checks.appendChild(gh);
+      // [v3.3.48] 줄 꺾인 글 처리 방식(자동/항상/끄기)은 이 묶음의 대표 스위치라서 묶음 제목 바로 아래에 둔다.
+      if (group === '줄 꺾인·스캔 글') checks.appendChild(wrapRow);
       lastGroup = group;
     }
     const row = document.createElement('label');
@@ -2676,7 +2692,6 @@ function openSettingsWindow() {
     row.append(input, text);
     checks.appendChild(row);
     if (key === 'splitLongParagraphs') checks.appendChild(limitRow);
-    if (key === 'restoreWordBreaks') checks.appendChild(wrapRow);
     if (key === 'unifySeparators') checks.appendChild(sepRow);
   });
 

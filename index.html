@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.53</title>
+<title>텍스트 정리 도구 v3.3.54</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -297,7 +297,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.53</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.54</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -352,6 +352,7 @@
         <li>파일을 열거나 끌어다 놓거나, 왼쪽 칸에 글을 붙여넣습니다. 글자가 깨지면 인코딩을 바꿔 보세요.</li>
         <li><b>처리하기</b>를 누르면 오른쪽에 정리된 결과가 나옵니다.</li>
         <li>결과를 확인하고 <b>저장</b>하거나 <b>복사</b>합니다. 노란 경고가 나오면 <b>자세히 보기</b>에서 따옴표 오타 위치를 확인하고, 목록을 복사·저장할 수 있습니다. 스캔 글의 글자 인식(OCR) 오류로 닫는 따옴표가 <code>J</code>·<code>1</code>·<code>?.</code> 처럼 잘못 읽힌 듯한 줄은 노란 글씨로 알려 주며, <b>의심 줄</b> 버튼으로 바로 갈 수 있습니다.</li>
+        <li>따옴표·괄호가 크게 안 닫혀 문단이 많이 뭉친 <b>지저분한 글</b>은 처리 뒤 팝업으로 알려 줍니다. 팝업에서 <b>목록 보기</b>로 고칠 줄을 찾거나, <b>이 글만 옵션 켜고 다시 처리</b>로 설정은 그대로 두고 한 번만 다시 처리해 볼 수 있습니다. 거슬리면 설정의 <b>지저분한 글 경고 팝업</b>에서 끄세요.</li>
         <li>세부 규칙은 <b>설정</b>에서 켜고 끌 수 있습니다. 자주 쓰는 설정은 설정 맨 위 <b>설정 묶음</b>에 이름을 붙여 저장해 두고 나중에 불러올 수 있고, 파일로 내보내 다른 브라우저에서 가져올 수도 있습니다. 설정의 <b>문장부호 바로잡기</b>(기본 꺼짐)를 켜면 전각 쉼표·뒤집힌 따옴표·섞인 괄호를 고치고, 처리 후 <b>고친 곳 보기</b>에서 확인할 수 있습니다.</li>
         <li>설정의 <b>제목 앞에 ## 붙이기</b>(기본 꺼짐)를 켜면 1화·제2장·Chapter 3·프롤로그 같은 확실한 제목 맨 앞에 <code>## </code>이 붙습니다. 마크다운을 읽는 뷰어·변환기용입니다.</li>
         <li>설정의 <b>긴 문단 나누기</b>(기본 꺼짐)를 켜면 기준 글자 수(기본 300자)보다 긴 설명 문단을 문장 끝에서 나눕니다. 기준은 설정에서 바꿀 수 있습니다.</li>
@@ -512,7 +513,10 @@ const DEFAULT_RULE_SETTINGS = {
   wrappedFromChapter: 0,
   // [v3.3.50] 줄 꺾인 글 처리가 적용되는 구간에서, '꽉 찬 줄'보다 눈에 띄게 짧은 줄은 문단의 끝으로 본다(글자 수로 꺾인 글은 짧은 줄 = 문단 마지막 줄).
   // 채팅·알림처럼 마침표 없이 끝나는 문단이 서로 합쳐지는 것을 막고, `-닉네임 : 말` 채팅 줄은 새 문단으로 시작한다. 문단 모양이 바뀌므로 기본 OFF.
-  wrappedShortLineBreak: false
+  wrappedShortLineBreak: false,
+  // [v3.3.54] 많이 지저분한 글(따옴표·괄호가 12줄 넘게 안 닫혀 포기한 곳 3군데 이상)이면 처리 뒤 팝업으로 알린다.
+  // 결과 글은 바꾸지 않고 알림만 하므로, 눈에 띄도록 기본 켜짐. 거슬리면 설정에서 끈다.
+  warnMessyPopup: true
 };
 
 // [v3.3.31] 긴 문단 나누기 기준값. 설정을 불러오는 코드(applySavedSettings)가 먼저 쓰므로 여기 앞쪽에 둔다
@@ -564,6 +568,7 @@ const RULE_SETTING_ITEMS = [
     ['fixFullwidthComma', '이상한 쉼표 고치기 — 한글 글에 섞인 넓은 쉼표(，)를 일반 쉼표(,)로 바꿉니다.', '기호 모양 통일·바로잡기'],
     ['fixReversedQuote', '뒤집힌 따옴표 고치기 — 대사 끝에 잘못 찍힌 여는 따옴표(“ ‘)를 닫는 따옴표(” ’)로 바꿉니다.', '기호 모양 통일·바로잡기'],
     ['fixMixedBrackets', '섞인 괄호 모양 맞추기 — 한 줄 안에서 넓은 괄호와 일반 괄호가 섞인 짝(［…] 등)을 여는 괄호에 맞춥니다.', '기호 모양 통일·바로잡기'],
+    ['warnMessyPopup', '지저분한 글 경고 팝업 — 따옴표·괄호가 안 닫힌 곳이 많아 문단이 크게 뭉친 글(12줄 넘게 안 닫힌 곳이 3군데 이상)을 처리하면 팝업으로 알려 줍니다. 결과 글은 바뀌지 않습니다. 끄면 노란 경고줄로만 알립니다.', '알림'],
 ];
 
 // 위 두 목록의 키가 서로 어긋났는지 확인한다(한쪽만 고치고 잊는 실수 방지).
@@ -1075,7 +1080,7 @@ outputArea.addEventListener('keydown', (e) => {
 // F3 / Shift+F3: 창이 떠 있을 땐 쓰지 않는다.
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'F3' || !searchInput.value) return;
-  if (document.getElementById('settingsModal') || document.getElementById('warningModal') || document.getElementById('fixModal')) return;
+  if (document.getElementById('settingsModal') || document.getElementById('warningModal') || document.getElementById('fixModal') || document.getElementById('messyModal')) return;
   e.preventDefault();
   findInArea(e.shiftKey ? -1 : 1);
 });
@@ -2519,6 +2524,25 @@ function fixesToText(fixes, sourceName) {
   return lines.join('\n');
 }
 
+// [v3.3.54] 글이 '많이 지저분한지' 판정한다(처리 결과는 건드리지 않고 경고 목록만 본다).
+// 기준: 따옴표·괄호가 MAX_OPEN_LINES(12)줄 넘게 안 닫혀 처리가 포기한 곳(giveUp)이 3군데 이상.
+// 이 기준을 고른 이유(샘플 1,124개 + 테스트용 3개로 확인):
+//  - 짧은 줄 비율은 못 쓴다: 정상 웹소설도 짧은 대사 줄이 많아(중간값 26%) 정상 글과 구분이 안 된다.
+//  - 경고 개수·'합쳐진 줄 수'는 큰 글에서 정상으로도 늘어난다. 포기 횟수는 정상 글에서 거의 0이다(11개 파일만 1회 이상).
+//  - 3군데 이상이면 샘플 4개(0.4%)와 테스트용 3개만 걸려, 잘못 뜨는 일이 거의 없다.
+const MESSY_GIVEUP_MIN = 3;
+function assessMessiness(warnings) {
+  const list = warnings || [];
+  const giveUps = list.filter((w) => w.giveUp).length;
+  return {
+    messy: giveUps >= MESSY_GIVEUP_MIN,
+    giveUps,
+    total: list.length,
+    mergedLines: list.reduce((sum, w) => sum + (w.merged || 0), 0),
+    ocrHints: list.filter((w) => w.hint).length
+  };
+}
+
 /* @@CORE_END@@ — 회귀_검사.py가 처리 규칙 코드를 여기까지만 잘라 쓴다(이 표시는 지우지 말 것) */
 /* ========================================================================
  * 설정 창
@@ -3260,7 +3284,95 @@ inputArea.addEventListener('keydown', (e) => {
   }
 });
 
-processBtn.addEventListener('click', () => {
+/* ========================================================================
+ * [v3.3.54] '글이 많이 지저분합니다' 경고 팝업
+ * ------------------------------------------------------------------------
+ * 노란 경고줄은 눈에 잘 안 띄어 무시되곤 해서, 심한 글만 팝업으로 알린다(판정은 assessMessiness).
+ * 처리 결과는 바꾸지 않는다. 같은 글을 같은 결과로 다시 처리하면 또 띄우지 않는다(반복되면 팝업도 무시하게 됨).
+ * 원본 글에는 따옴표·< > 가 섞여 있으므로 innerHTML 대신 textContent로만 넣는다.
+ * ====================================================================== */
+let messyShownKey = '';
+function maybeShowMessyPopup(raw, warnings) {
+  if (!ruleSettings.warnMessyPopup) return;
+  const info = assessMessiness(warnings);
+  if (!info.messy) return;
+  const key = `${raw.length}:${info.giveUps}`;
+  if (key === messyShownKey) return;
+  messyShownKey = key;
+  openMessyWindow(info, warnings);
+}
+
+function openMessyWindow(info, warnings) {
+  if (document.getElementById('messyModal')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'messyModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;';
+  const panel = document.createElement('div');
+  panel.style.cssText = 'background:#101214;color:#e9ecef;border:1px solid #e0b84a;border-radius:8px;padding:22px;width:min(520px,92vw);max-height:80vh;overflow:auto;font-family:Arial,"Malgun Gothic",sans-serif;font-size:14px;line-height:1.55;box-shadow:0 12px 40px rgba(0,0,0,.5);';
+
+  const h1 = document.createElement('h1');
+  h1.textContent = '⚠ 이 글은 많이 지저분합니다';
+  h1.style.cssText = 'margin:0 0 10px;font-size:20px;color:#e0b84a;';
+
+  const p1 = document.createElement('p');
+  p1.style.cssText = 'margin:0 0 10px;';
+  let t1 = `원본에서 따옴표나 괄호가 빠져 문단이 크게 뭉쳤을 가능성이 높은 곳이 ${info.giveUps}군데 있습니다. (12줄이 넘도록 닫히지 않아 처리가 포기한 곳)`;
+  if (info.ocrHints > 0) t1 += ` 스캔 글 오타(닫는 따옴표가 J·1 등으로 읽힘)로 보이는 곳 ${info.ocrHints}군데도 있습니다.`;
+  p1.textContent = t1;
+
+  const p2 = document.createElement('p');
+  p2.style.cssText = 'margin:0 0 6px;color:#aab0b6;font-size:13px;';
+  p2.textContent = '이렇게 해 보세요';
+  const ol = document.createElement('ol');
+  ol.style.cssText = 'margin:0 0 14px;padding-left:20px;color:#d5dade;font-size:13px;';
+  [
+    '[목록 보기]에서 해당 줄을 찾아 원본의 따옴표를 고친 뒤 다시 처리합니다. 가장 확실한 방법입니다.',
+    '고치기 어렵다면 [이 글만 옵션 켜고 다시 처리]를 눌러 보세요. "줄 꺾인 글 처리"와 "따옴표가 안 닫혀도 새 대사는 나누기"를 이번 한 번만 켜서 처리합니다. 설정은 바뀌지 않습니다. 대사 중간이 쪼개질 수 있으니 결과를 꼭 확인하세요.'
+  ].forEach((t) => { const li = document.createElement('li'); li.textContent = t; li.style.cssText = 'margin-bottom:6px;'; ol.appendChild(li); });
+
+  const note = document.createElement('p');
+  note.style.cssText = 'margin:0 0 4px;color:#8a9097;font-size:12px;';
+  note.textContent = '이 팝업은 설정의 "지저분한 글 경고 팝업"에서 끌 수 있습니다.';
+
+  const btnCss = 'padding:8px 14px;background:#1b1f23;color:#e9ecef;border:1px solid #292d31;border-radius:4px;cursor:pointer;font-size:13px;';
+  const listBtn = document.createElement('button');
+  listBtn.type = 'button'; listBtn.textContent = '목록 보기'; listBtn.style.cssText = btnCss;
+  const retryBtn = document.createElement('button');
+  retryBtn.type = 'button'; retryBtn.textContent = '이 글만 옵션 켜고 다시 처리'; retryBtn.style.cssText = btnCss;
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button'; closeBtn.textContent = '닫기';
+  closeBtn.style.cssText = 'padding:8px 20px;background:#2f5f47;color:#e9ecef;border:none;border-radius:4px;cursor:pointer;font-size:13px;';
+  const row = document.createElement('div');
+  row.style.cssText = 'margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;';
+  row.append(listBtn, retryBtn, closeBtn);
+
+  function close() {
+    document.removeEventListener('keydown', onKey);
+    overlay.remove();
+  }
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  document.addEventListener('keydown', onKey);
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  // 목록 팝업이 이 팝업 위에 겹쳐 보이지 않도록 먼저 닫는다.
+  listBtn.addEventListener('click', () => { close(); openWarningWindow(warnings); });
+  retryBtn.addEventListener('click', () => {
+    close();
+    // 방식이 '○화부터'면 사용자가 정한 구간을 지키려고 방식은 그대로 두고, 그 외에는 '항상 켜기'로 임시 전환한다.
+    const overrides = { wrappedStopAtOpenQuote: true };
+    if (ruleSettings.wrappedFileMode !== 'chapter') overrides.wrappedFileMode = 'on';
+    runProcess(overrides);
+  });
+
+  panel.append(h1, p1, p2, ol, note, row);
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+}
+
+// [v3.3.54] 처리 본체를 함수로 뺐다: 팝업의 '이 글만 옵션 켜고 다시 처리'가 같은 처리를 임시 옵션으로 다시 돌리기 위함.
+// overrides: 이번 한 번만 덮어쓸 옵션(null이면 설정 그대로). 설정 자체는 저장하지도 바꾸지도 않는다.
+function runProcess(overrides) {
   const raw = inputArea.value;
   if (!raw.trim()) {
     // 빈 입력으로 처리를 시도하면 결과도 빈 문자열이라 사용자가
@@ -3273,7 +3385,7 @@ processBtn.addEventListener('click', () => {
   // 1·2·3·5번은 사용자가 변경할 수 없는 고정 규칙이다.
   // 설정 창의 세부 규칙은 ruleSettings에 모여 있으니 통째로 복사해 쓴다.
   // (옵션이 늘 때마다 여기에 항목을 따로 적으면 빠뜨리기 쉬움)
-  const opts = { ...ruleSettings };
+  const opts = { ...ruleSettings, ...(overrides || {}) };
 
   /*
    * 처리 함수에서 예상하지 못한 오류가 발생하더라도 브라우저가
@@ -3290,12 +3402,15 @@ processBtn.addEventListener('click', () => {
     if (wrappedBy === 'auto') message += ' (줄 꺾인 글로 판단해 빈 줄을 무시하고 이어 붙임)';
     // [v3.3.49] 시작 화를 지정했는데 그 제목 줄이 없으면 아무것도 적용되지 않았음을 알려, 지정이 먹힌 줄 오해하지 않게 한다.
     if (wrappedBy === null && opts.wrappedFileMode === 'chapter' && opts.wrappedFromChapter > 0) message += wrappedSectionFound ? ` (${opts.wrappedFromChapter}화부터 줄 꺾인 글 처리 적용)` : ` (${opts.wrappedFromChapter}화 제목 줄을 못 찾아 줄 꺾인 글 처리는 적용되지 않음)`;
+    if (overrides) message += ' (이 글만 옵션을 임시로 켜서 다시 처리함 — 설정은 그대로)';
     statusEl.textContent = message;
     statusEl.className = warnings.length ? 'status' : 'status ok';
     lastWarnings = warnings;
     lastFixes = autoFixes;
     appendWarningLink();
     refreshStats();
+    // 다시 처리한 결과에서는 팝업을 또 띄우지 않는다(같은 팝업이 반복되는 것 방지).
+    if (!overrides) maybeShowMessyPopup(raw, warnings);
   } catch (error) {
     console.error('텍스트 처리 중 오류:', error);
     outputArea.value = '';
@@ -3306,7 +3421,9 @@ processBtn.addEventListener('click', () => {
     statusEl.textContent = '처리 중 오류가 발생했습니다. 브라우저 개발자 도구(F12)의 Console을 확인하세요.';
     statusEl.className = 'status';
   }
-});
+}
+
+processBtn.addEventListener('click', () => runProcess(null));
 
 downloadBtn.addEventListener('click', async () => {
   const text = outputArea.value;

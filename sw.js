@@ -1,5 +1,5 @@
 // 자동 생성 파일(웹_빌드.py). 직접 고치지 마세요.
-const CACHE = 'text-cleanup-v3.3.53';
+const CACHE = 'text-cleanup-v3.3.54';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).catch(() => {}).then(() => self.skipWaiting()));

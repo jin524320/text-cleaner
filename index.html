@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.54</title>
+<title>텍스트 정리 도구 v3.3.55</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -297,7 +297,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.54</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.55</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -353,6 +353,7 @@
         <li><b>처리하기</b>를 누르면 오른쪽에 정리된 결과가 나옵니다.</li>
         <li>결과를 확인하고 <b>저장</b>하거나 <b>복사</b>합니다. 노란 경고가 나오면 <b>자세히 보기</b>에서 따옴표 오타 위치를 확인하고, 목록을 복사·저장할 수 있습니다. 스캔 글의 글자 인식(OCR) 오류로 닫는 따옴표가 <code>J</code>·<code>1</code>·<code>?.</code> 처럼 잘못 읽힌 듯한 줄은 노란 글씨로 알려 주며, <b>의심 줄</b> 버튼으로 바로 갈 수 있습니다.</li>
         <li>따옴표·괄호가 크게 안 닫혀 문단이 많이 뭉친 <b>지저분한 글</b>은 처리 뒤 팝업으로 알려 줍니다. 팝업에서 <b>목록 보기</b>로 고칠 줄을 찾거나, <b>이 글만 옵션 켜고 다시 처리</b>로 설정은 그대로 두고 한 번만 다시 처리해 볼 수 있습니다. 거슬리면 설정의 <b>지저분한 글 경고 팝업</b>에서 끄세요.</li>
+        <li><b>이 도구의 한계</b>: 따옴표·괄호의 짝이 안 맞는 글(특히 줄이 낱말 중간에서 꺾이고 곧은 따옴표 <code>"</code>를 쓴 글)은 어디서 대사가 끝나는지 알 수 없어 정확히 정리할 수 없습니다. 그런 글은 팝업으로 알려 드리며, 결과를 직접 확인하고 원본을 따로 보관하세요.</li>
         <li>세부 규칙은 <b>설정</b>에서 켜고 끌 수 있습니다. 자주 쓰는 설정은 설정 맨 위 <b>설정 묶음</b>에 이름을 붙여 저장해 두고 나중에 불러올 수 있고, 파일로 내보내 다른 브라우저에서 가져올 수도 있습니다. 설정의 <b>문장부호 바로잡기</b>(기본 꺼짐)를 켜면 전각 쉼표·뒤집힌 따옴표·섞인 괄호를 고치고, 처리 후 <b>고친 곳 보기</b>에서 확인할 수 있습니다.</li>
         <li>설정의 <b>제목 앞에 ## 붙이기</b>(기본 꺼짐)를 켜면 1화·제2장·Chapter 3·프롤로그 같은 확실한 제목 맨 앞에 <code>## </code>이 붙습니다. 마크다운을 읽는 뷰어·변환기용입니다.</li>
         <li>설정의 <b>긴 문단 나누기</b>(기본 꺼짐)를 켜면 기준 글자 수(기본 300자)보다 긴 설명 문단을 문장 끝에서 나눕니다. 기준은 설정에서 바꿀 수 있습니다.</li>
@@ -2531,7 +2532,7 @@ function fixesToText(fixes, sourceName) {
 //  - 경고 개수·'합쳐진 줄 수'는 큰 글에서 정상으로도 늘어난다. 포기 횟수는 정상 글에서 거의 0이다(11개 파일만 1회 이상).
 //  - 3군데 이상이면 샘플 4개(0.4%)와 테스트용 3개만 걸려, 잘못 뜨는 일이 거의 없다.
 const MESSY_GIVEUP_MIN = 3;
-function assessMessiness(warnings) {
+function assessMessiness(warnings, wrappedBy) {
   const list = warnings || [];
   const giveUps = list.filter((w) => w.giveUp).length;
   return {
@@ -2539,7 +2540,8 @@ function assessMessiness(warnings) {
     giveUps,
     total: list.length,
     mergedLines: list.reduce((sum, w) => sum + (w.merged || 0), 0),
-    ocrHints: list.filter((w) => w.hint).length
+    ocrHints: list.filter((w) => w.hint).length,
+    wrapped: !!wrappedBy // 줄 꺾인 글로 처리된 글인지(한계 안내 문구에 쓴다)
   };
 }
 
@@ -3292,9 +3294,9 @@ inputArea.addEventListener('keydown', (e) => {
  * 원본 글에는 따옴표·< > 가 섞여 있으므로 innerHTML 대신 textContent로만 넣는다.
  * ====================================================================== */
 let messyShownKey = '';
-function maybeShowMessyPopup(raw, warnings) {
+function maybeShowMessyPopup(raw, warnings, wrappedBy) {
   if (!ruleSettings.warnMessyPopup) return;
-  const info = assessMessiness(warnings);
+  const info = assessMessiness(warnings, wrappedBy);
   if (!info.messy) return;
   const key = `${raw.length}:${info.giveUps}`;
   if (key === messyShownKey) return;
@@ -3320,6 +3322,18 @@ function openMessyWindow(info, warnings) {
   let t1 = `원본에서 따옴표나 괄호가 빠져 문단이 크게 뭉쳤을 가능성이 높은 곳이 ${info.giveUps}군데 있습니다. (12줄이 넘도록 닫히지 않아 처리가 포기한 곳)`;
   if (info.ocrHints > 0) t1 += ` 스캔 글 오타(닫는 따옴표가 J·1 등으로 읽힘)로 보이는 곳 ${info.ocrHints}군데도 있습니다.`;
   p1.textContent = t1;
+
+  // [v3.3.55] 한계 안내: 이런 글은 어떤 규칙으로도 완벽히 정리할 수 없다는 점을 분명히 알린다(결과를 믿고 그대로 쓰지 않게).
+  const limit = document.createElement('div');
+  limit.style.cssText = 'margin:0 0 12px;padding:10px 12px;border:1px solid #e0b84a;border-radius:6px;background:#1b1810;color:#f0d98a;font-size:13px;';
+  const limitTitle = document.createElement('div');
+  limitTitle.textContent = '이 프로그램의 한계';
+  limitTitle.style.cssText = 'font-weight:bold;margin-bottom:4px;';
+  const limitBody = document.createElement('div');
+  limitBody.textContent = '따옴표·괄호의 짝이 안 맞는 글은 어디서 대사가 끝나는지 알 수 없어, 프로그램이 정확히 정리할 수 없습니다. '
+    + (info.wrapped ? '특히 줄이 낱말 중간에서 꺾인 글이라 더 어렵습니다. ' : '')
+    + '결과에 문단이 잘못 합쳐지거나 쪼개진 곳이 남을 수 있으니, 저장하기 전에 직접 확인하세요. 중요한 글은 원본을 따로 보관하세요.';
+  limit.append(limitTitle, limitBody);
 
   const p2 = document.createElement('p');
   p2.style.cssText = 'margin:0 0 6px;color:#aab0b6;font-size:13px;';
@@ -3365,7 +3379,7 @@ function openMessyWindow(info, warnings) {
     runProcess(overrides);
   });
 
-  panel.append(h1, p1, p2, ol, note, row);
+  panel.append(h1, p1, limit, p2, ol, note, row);
   overlay.appendChild(panel);
   document.body.appendChild(overlay);
 }
@@ -3410,7 +3424,7 @@ function runProcess(overrides) {
     appendWarningLink();
     refreshStats();
     // 다시 처리한 결과에서는 팝업을 또 띄우지 않는다(같은 팝업이 반복되는 것 방지).
-    if (!overrides) maybeShowMessyPopup(raw, warnings);
+    if (!overrides) maybeShowMessyPopup(raw, warnings, wrappedBy);
   } catch (error) {
     console.error('텍스트 처리 중 오류:', error);
     outputArea.value = '';

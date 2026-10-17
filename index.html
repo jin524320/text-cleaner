@@ -345,29 +345,110 @@
   </div>
   <div class="status" id="status"></div>
   <div class="web-note" style="margin-top:10px;font-size:12px;color:var(--dim);line-height:1.7;">
+    <!-- 사용 방법 모양: 맨 위 '3단계'만 먼저 보이고, 나머지는 '이럴 땐' 질문을 눌러 펼치게 해서 길어 보이지 않게 한다. -->
+    <style>
+      .hp > summary { cursor: pointer; color: var(--accent); }
+      .hp-body { margin-top: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+                 background: var(--panel); color: var(--text); max-height: 55vh; overflow-y: auto; }
+      .hp-title { font-weight: 700; color: var(--accent); margin: 10px 0 6px; }
+      .hp-title:first-child { margin-top: 0; }
+      .hp-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; counter-reset: hp; }
+      .hp-steps li { counter-increment: hp; padding: 6px 8px 6px 34px; position: relative;
+                     border: 1px solid var(--line); border-radius: 6px; }
+      .hp-steps li::before { content: counter(hp); position: absolute; left: 8px; top: 6px; width: 18px; height: 18px;
+                     line-height: 18px; text-align: center; border-radius: 50%; background: var(--accent-dim); color: var(--text);
+                     font-size: 11px; font-weight: 700; }
+      .hp-q { border-bottom: 1px dashed var(--line); }
+      .hp-q > summary { cursor: pointer; padding: 5px 0; color: var(--text); }
+      .hp-q > summary:hover { color: var(--accent); }
+      .hp-q > div { padding: 0 0 8px 14px; color: var(--dim); }
+      .hp-q b { color: var(--text); }
+      .hp-limit { margin-top: 10px; padding: 8px 10px; border-left: 3px solid #d9a441; background: rgba(217,164,65,.08); color: var(--text); }
+      .hp-foot { margin-top: 8px; color: var(--dim); }
+    </style>
     <div>글은 서버로 전송되지 않고 이 브라우저 안에서만 처리됩니다. 설정은 이 브라우저에 저장됩니다.</div>
-    <details style="margin-top:6px;">
-      <summary style="cursor:pointer;color:var(--accent);">사용 방법</summary>
-      <ol style="margin:6px 0 0;padding-left:20px;">
-        <li>파일을 열거나 끌어다 놓거나, 왼쪽 칸에 글을 붙여넣습니다. 글자가 깨지면 인코딩을 바꿔 보세요.</li>
-        <li><b>처리하기</b>를 누르면 오른쪽에 정리된 결과가 나옵니다.</li>
-        <li>결과를 확인하고 <b>저장</b>하거나 <b>복사</b>합니다. 노란 경고가 나오면 <b>자세히 보기</b>에서 따옴표 오타 위치를 확인하고, 목록을 복사·저장할 수 있습니다. 스캔 글의 글자 인식(OCR) 오류로 닫는 따옴표가 <code>J</code>·<code>1</code>·<code>?.</code> 처럼 잘못 읽힌 듯한 줄은 노란 글씨로 알려 주며, <b>의심 줄</b> 버튼으로 바로 갈 수 있습니다.</li>
-        <li>따옴표·괄호가 크게 안 닫혀 문단이 많이 뭉친 <b>지저분한 글</b>은 처리 뒤 팝업으로 알려 줍니다. 팝업에서 <b>목록 보기</b>로 고칠 줄을 찾거나, <b>이 글만 옵션 켜고 다시 처리</b>로 설정은 그대로 두고 이 글에만 옵션을 임시로 켜서 다시 처리해 볼 수 있습니다(새 글을 열거나 리셋하면 풀립니다). 거슬리면 설정의 <b>지저분한 글 경고 팝업</b>에서 끄세요.</li>
-        <li><b>이 도구의 한계</b>: 따옴표·괄호의 짝이 안 맞는 글(특히 줄이 낱말 중간에서 꺾이고 곧은 따옴표 <code>"</code>를 쓴 글)은 어디서 대사가 끝나는지 알 수 없어 정확히 정리할 수 없습니다. 그런 글은 팝업으로 알려 드리며, 결과를 직접 확인하고 원본을 따로 보관하세요.</li>
-        <li>세부 규칙은 <b>설정</b>에서 켜고 끌 수 있습니다. 자주 쓰는 설정은 설정 맨 위 <b>설정 묶음</b>에 이름을 붙여 저장해 두고 나중에 불러올 수 있고, 파일로 내보내 다른 브라우저에서 가져올 수도 있습니다. 설정의 <b>문장부호 바로잡기</b>(기본 꺼짐)를 켜면 전각 쉼표·뒤집힌 따옴표·섞인 괄호를 고치고, 처리 후 <b>고친 곳 보기</b>에서 확인할 수 있습니다.</li>
-        <li>설정의 <b>제목 앞에 ## 붙이기</b>(기본 꺼짐)를 켜면 1화·제2장·Chapter 3·프롤로그 같은 확실한 제목 맨 앞에 <code>## </code>이 붙습니다. 마크다운을 읽는 뷰어·변환기용입니다.</li>
-        <li>설정의 <b>긴 문단 나누기</b>(기본 꺼짐)를 켜면 기준 글자 수(기본 300자)보다 긴 설명 문단을 문장 끝에서 나눕니다. 기준은 설정에서 바꿀 수 있습니다.</li>
-        <li>상태줄 오른쪽 <b>찾기</b>에 글자를 쓰고 Enter(▼)를 누르면 결과 칸에서 그 글자를 찾아 이동합니다(Shift+Enter 또는 ▲는 이전). "원본에서"로 바꿔 같은 글을 원본 칸에서도 찾으면 어디가 어떻게 고쳐졌는지 비교할 수 있습니다.</li>
-        <li>설정의 <b>구분선 모양 통일</b>은 ***, ---, * * * 처럼 제각각인 구분선을 고른 모양 하나로 맞추고, <b>제목 앞 빈 줄 늘리기</b>는 1화·제2장 같은 확실한 제목 앞에 빈 줄을 한 줄 더 넣습니다. 둘 다 기본 꺼짐입니다.</li>
-        <li>줄 사이마다 빈 줄이 끼어 문장이 끊긴 글(일정 글자 수에서 꺾인 글)은 자동으로 알아보고 이어 붙입니다. 자동으로 안 잡히는 짧은 글은 설정의 <b>줄 꺾인 글 처리</b>를 <b>항상 켜기</b>로 바꾸세요. 평범한 글에서는 켜지 마세요(문단 구분이 사라집니다).</li>
-        <li>앞부분은 정상이고 <b>○화부터만</b> 줄이 꺾인 파일은 설정의 <b>줄 꺾인 글 처리</b>를 <b>○화부터</b>로 바꾸고 나타나는 칸에 숫자(예: 216)를 넣으세요. 그 화 제목 줄부터만 처리하고 앞부분은 그대로 둡니다. 채팅 줄(<code>-닉네임 : 말</code>)이 한 문단으로 뭉치면 <b>짧은 줄은 문단 끝으로 보기</b>(기본 꺼짐)를 켜 보세요. 낱말 복원·줄 끝 글자 지우기·열린 따옴표 옵션은 설정의 <b>세부 설정 ▾</b> 안에 있습니다. 스캔 글은 같은 묶음의 <b>스캔 글용으로 맞추기</b> 버튼으로 한 번에 맞추고, 일반 글을 처리할 때는 <b>이 묶음 초기화</b>로 되돌리세요.</li>
-        <li>한 줄 안에서 서술 바로 뒤에 대사나 [알림]이 붙어 나오는 글(<code>떴다. "선배님…"</code>, <code>울렸다. [패턴 감지]</code>)은 설정의 <b>서술 뒤 대사·알림 앞에서 줄 나누기</b>(기본 꺼짐)를 켜면 그 앞에서 문단이 나뉩니다. <code>…"</code>로 끝난 대사 뒤에 붙은 서술도 함께 나뉩니다.</li>
-        <li><code>[알림1] [알림2]</code>처럼 괄호 알림이 한 줄에 여러 개 붙은 글은 설정의 <b>[ ] 알림 여러 개 나누기</b>(기본 꺼짐)를 켜면 알림마다 줄이 나뉩니다.</li>
-        <li>마침표 뒤에 눈에 안 보이는 글자가 붙어 줄이 이상하게 합쳐지는 글은 설정의 <b>줄 끝 보이지 않는 글자 지우기</b>(기본 꺼짐)를 켜 보세요.</li>
-        <li>이 페이지는 <b>앱처럼 설치</b>할 수 있습니다. 아래 <b>앱으로 설치</b> 버튼을 누르거나, 크롬·엣지는 주소창 오른쪽의 설치 아이콘(모니터에 화살표)을, 아이폰은 공유 버튼의 <b>홈 화면에 추가</b>를 쓰세요. 설치해도 글은 서버로 전송되지 않습니다.</li>
-        <li>왼쪽 칸에서 <b>Ctrl+Enter</b>(맥은 Cmd+Enter)를 누르면 바로 처리됩니다.</li>
-        <li>원본 글자는 지우지 않고 공백·줄바꿈만 정리하지만, 중요한 글은 <b>원본을 따로 보관</b>하세요.</li>
-      </ol>
+    <details class="hp" style="margin-top:6px;">
+      <summary>사용 방법</summary>
+      <div class="hp-body">
+        <div class="hp-title">처음이라면 3단계</div>
+        <ol class="hp-steps">
+          <li><b>글 넣기</b> — 파일을 열거나 끌어다 놓거나, 왼쪽 칸에 붙여넣으세요. 글자가 깨지면 <b>인코딩</b>을 바꿔 보세요.</li>
+          <li><b>처리하기</b> — 버튼을 누르면 오른쪽에 정리된 결과가 나옵니다. (<b>Ctrl+Enter</b>, 맥은 Cmd+Enter도 됩니다)</li>
+          <li><b>저장</b> 또는 <b>복사</b> — 결과를 확인하고 가져가세요. 중요한 글은 <b>원본을 따로 보관</b>하세요.</li>
+        </ol>
+
+        <div class="hp-title">이럴 땐 이렇게 <span style="font-weight:400;color:var(--dim);">(눌러서 펼치기)</span></div>
+
+        <details class="hp-q"><summary>노란 경고가 나왔어요</summary><div>
+          <b>자세히 보기</b>에서 따옴표가 잘못된 위치를 볼 수 있고, 목록을 복사·저장할 수도 있습니다.
+          스캔한 글에서 닫는 따옴표가 <code>J</code>·<code>1</code>·<code>?.</code> 처럼 잘못 읽힌 듯한 줄은 노란 글씨로 알려 주며, <b>의심 줄</b> 버튼으로 바로 갈 수 있습니다.
+        </div></details>
+
+        <details class="hp-q"><summary>"지저분한 글" 팝업이 떴어요</summary><div>
+          따옴표·괄호가 크게 안 닫혀 문단이 많이 뭉친 글입니다. 팝업에서 <b>목록 보기</b>로 고칠 줄을 찾거나,
+          <b>이 글만 옵션 켜고 다시 처리</b>를 눌러 보세요. 설정은 그대로 두고 이 글에만 옵션을 임시로 켜 줍니다(새 글을 열거나 리셋하면 풀립니다).
+          팝업이 거슬리면 설정의 <b>지저분한 글 경고 팝업</b>에서 끄세요.
+        </div></details>
+
+        <details class="hp-q"><summary>줄이 중간중간 끊겨 있어요 (줄마다 빈 줄이 끼어 있어요)</summary><div>
+          대부분 자동으로 알아보고 이어 붙입니다. 자동으로 안 잡히는 짧은 글은 설정의 <b>줄 꺾인 글 처리</b>를 <b>항상 켜기</b>로 바꾸세요.
+          평범한 글에서는 켜지 마세요(문단 구분이 사라집니다).
+        </div></details>
+
+        <details class="hp-q"><summary>○화부터만 줄이 꺾여 있어요</summary><div>
+          설정의 <b>줄 꺾인 글 처리</b>를 <b>○화부터</b>로 바꾸고, 나타나는 칸에 숫자(예: 216)를 넣으세요.
+          그 화 제목 줄부터만 처리하고 앞부분은 그대로 둡니다.
+        </div></details>
+
+        <details class="hp-q"><summary>스캔한 글(글자 인식 글)이에요</summary><div>
+          설정 묶음의 <b>스캔 글용으로 맞추기</b> 버튼을 누르면 한 번에 맞춰집니다.
+          일반 글을 처리할 때는 <b>이 묶음 초기화</b>로 되돌리세요. 낱말 복원·줄 끝 글자 지우기·열린 따옴표 옵션은 설정의 <b>세부 설정 ▾</b> 안에 있습니다.
+        </div></details>
+
+        <details class="hp-q"><summary>채팅 줄(-닉네임 : 말)이 한 문단으로 뭉쳐요</summary><div>
+          설정의 <b>짧은 줄은 문단 끝으로 보기</b>(기본 꺼짐)를 켜 보세요.
+        </div></details>
+
+        <details class="hp-q"><summary>대사나 [알림]이 서술 뒤에 붙어 나와요</summary><div>
+          <code>떴다. "선배님…"</code>, <code>울렸다. [패턴 감지]</code> 같은 글은 설정의 <b>서술 뒤 대사·알림 앞에서 줄 나누기</b>(기본 꺼짐)를 켜면 그 앞에서 문단이 나뉩니다.
+          <code>[알림1] [알림2]</code>처럼 알림이 한 줄에 여러 개면 <b>[ ] 알림 여러 개 나누기</b>(기본 꺼짐)를 켜세요.
+        </div></details>
+
+        <details class="hp-q"><summary>마침표 뒤에서 줄이 이상하게 합쳐져요</summary><div>
+          눈에 안 보이는 글자가 붙어 있을 수 있습니다. 설정의 <b>줄 끝 보이지 않는 글자 지우기</b>(기본 꺼짐)를 켜 보세요.
+        </div></details>
+
+        <details class="hp-q"><summary>문장부호가 제각각이에요</summary><div>
+          설정의 <b>문장부호 바로잡기</b>(기본 꺼짐)를 켜면 전각 쉼표·뒤집힌 따옴표·섞인 괄호를 고칩니다. 처리 후 <b>고친 곳 보기</b>에서 확인할 수 있습니다.
+        </div></details>
+
+        <details class="hp-q"><summary>제목·구분선·긴 문단을 보기 좋게 하고 싶어요</summary><div>
+          모두 설정에 있고 기본 꺼짐입니다.<br>
+          · <b>제목 앞에 ## 붙이기</b>: 1화·제2장·Chapter 3·프롤로그 같은 제목 앞에 <code>## </code>을 붙입니다(마크다운 뷰어·변환기용).<br>
+          · <b>제목 앞 빈 줄 늘리기</b>: 제목 앞에 빈 줄을 한 줄 더 넣습니다.<br>
+          · <b>구분선 모양 통일</b>: ***, ---, * * * 처럼 제각각인 구분선을 한 모양으로 맞춥니다.<br>
+          · <b>긴 문단 나누기</b>: 기준 글자 수(기본 300자)보다 긴 설명 문단을 문장 끝에서 나눕니다. 기준은 바꿀 수 있습니다.
+        </div></details>
+
+        <details class="hp-q"><summary>자주 쓰는 설정을 저장하고 싶어요</summary><div>
+          설정 맨 위 <b>설정 묶음</b>에 이름을 붙여 저장해 두고 나중에 불러올 수 있습니다. 파일로 내보내 다른 브라우저에서 가져올 수도 있습니다.
+        </div></details>
+
+        <details class="hp-q"><summary>결과에서 글자를 찾거나 원본과 비교하고 싶어요</summary><div>
+          상태줄 오른쪽 <b>찾기</b>에 글자를 쓰고 Enter(▼)를 누르면 결과 칸에서 찾아 이동합니다(Shift+Enter 또는 ▲는 이전).
+          "원본에서"로 바꿔 같은 글을 원본 칸에서도 찾으면 어디가 어떻게 고쳐졌는지 비교할 수 있습니다.
+        </div></details>
+
+        <details class="hp-q"><summary>앱처럼 설치하고 싶어요</summary><div>
+          아래 <b>앱으로 설치</b> 버튼을 누르거나, 크롬·엣지는 주소창 오른쪽의 설치 아이콘(모니터에 화살표)을, 아이폰은 공유 버튼의 <b>홈 화면에 추가</b>를 쓰세요. 설치해도 글은 서버로 전송되지 않습니다.
+        </div></details>
+
+        <div class="hp-limit"><b>이 도구의 한계</b><br>
+          따옴표·괄호의 짝이 안 맞는 글(특히 줄이 낱말 중간에서 꺾이고 곧은 따옴표 <code>"</code>를 쓴 글)은 어디서 대사가 끝나는지 알 수 없어 정확히 정리할 수 없습니다.
+          그런 글은 팝업으로 알려 드리며, 결과를 직접 확인하고 원본을 따로 보관하세요.
+        </div>
+        <div class="hp-foot">원본 글자는 지우지 않고 공백·줄바꿈만 정리합니다.</div>
+      </div>
     </details>
     <div id="installRow" hidden style="margin-top:6px;">앱처럼 쓰기:
       <button id="installBtn" type="button" style="font:inherit;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:6px;padding:2px 10px;cursor:pointer;">앱으로 설치</button>

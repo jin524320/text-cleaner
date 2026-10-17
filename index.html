@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.58</title>
+<title>텍스트 정리 도구 v3.3.59</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -297,7 +297,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.58</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.59</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -3667,7 +3667,13 @@ resetBtn.addEventListener('click', () => {
   fileInput.value = ''; // 같은 파일을 다시 선택해도 change 이벤트가 발생하도록 초기화
   fileNameEl.textContent = '선택된 파일 없음';
   encodingSelect.value = 'auto';
-  // [v3.3.22] 세부 규칙 설정은 리셋해도 유지한다. 소설을 바꿔 가며 쓸 때마다 규칙을 다시 켜야 했고,
+  // [v3.3.59] 스캔 글 설정은 자주 쓰지 않고, 켜 둔 채 일반 글을 처리하면 문단 구분이 사라지므로 리셋 때 끈다.
+  //   '스캔 글용으로 맞추기'가 켜는 두 가지만 되돌리고, '○화부터' 모드와 다른 설정은 건드리지 않는다.
+  let scanWasOn = false;
+  if (ruleSettings.wrappedFileMode === 'on') { ruleSettings.wrappedFileMode = DEFAULT_RULE_SETTINGS.wrappedFileMode; scanWasOn = true; }
+  if (ruleSettings.wrappedShortLineBreak) { ruleSettings.wrappedShortLineBreak = DEFAULT_RULE_SETTINGS.wrappedShortLineBreak; scanWasOn = true; }
+  if (scanWasOn) saveSettings();
+  // [v3.3.22] 나머지 세부 규칙 설정은 리셋해도 유지한다. 소설을 바꿔 가며 쓸 때마다 규칙을 다시 켜야 했고,
   // 모르고 처리하면 결과 모양이 조용히 달라졌다. 기본값은 설정 창의 '기본값으로 되돌리기'로 복원한다.
   sourceFileName = 'result';
   lastWarnings = [];
@@ -3679,9 +3685,9 @@ resetBtn.addEventListener('click', () => {
   setResultButtonsDisabled(true);
   refreshStats();
   statusEl.textContent = '리셋되었습니다.';
-  // 리셋은 설정을 지우지 않는다(v3.3.22). 스캔 글 옵션을 켜 둔 채인 걸 잊지 않도록 알려 준다.
-  if (ruleSettings.wrappedFileMode === 'on' || ruleSettings.wrappedShortLineBreak) {
-    statusEl.textContent += ' 단, 설정의 줄 꺾인·스캔 글 옵션은 켜진 채 그대로입니다(리셋은 설정을 지우지 않습니다). 일반 글을 처리하려면 설정의 "이 묶음 초기화"를 누르세요.';
+  // 꺼진 사실을 알려 줘야, 스캔 글을 이어서 처리할 때 다시 켜야 한다는 걸 안다.
+  if (scanWasOn) {
+    statusEl.textContent += ' 스캔 글 설정(줄 꺾인 글 "항상 켜기"·짧은 줄)은 꺼졌습니다. 스캔 글이면 설정의 "스캔 글용으로 맞추기"를 다시 누르세요.';
   }
   statusEl.className = 'status';
 });

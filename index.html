@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>텍스트 정리 도구 v3.3.59</title>
+<title>텍스트 정리 도구 v3.3.60</title>
 <style>
   /*
    * 색상/폰트를 변수로 뽑아둔 이유:
@@ -297,7 +297,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.59</span></h1>
+    <h1>텍스트 정리 도구 <span class="version-badge">v3.3.60</span></h1>
     <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfOfyHwAdVMquFdYcPPDPkZkIL3kQ8LUe4oLKOmK2plBMtGPQ/viewform?usp=header" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 10px;text-decoration:none;white-space:nowrap;">익명으로 제보하기</a>
   </header>
 
@@ -416,6 +416,11 @@
 
         <details class="hp-q"><summary>마침표 뒤에서 줄이 이상하게 합쳐져요</summary><div>
           눈에 안 보이는 글자가 붙어 있을 수 있습니다. 설정의 <b>줄 끝 보이지 않는 글자 지우기</b>(기본 꺼짐)를 켜 보세요.
+        </div></details>
+
+        <details class="hp-q"><summary>따옴표가 넓게 보이고(＂), 대사가 한 문단으로 뭉쳐요</summary><div>
+          글에 쓰인 따옴표가 일반 따옴표(<code>"</code>)가 아니라 넓은 따옴표(<code>＂</code>)이면 대사를 알아보지 못해, 줄 꺾인 글로 잘못 판정되어 문단이 합쳐질 수 있습니다.
+          설정의 <b>전각 따옴표 인식</b>(기본 꺼짐)을 켜고 다시 처리하세요. 넓은 따옴표를 일반 따옴표로 바꿔 읽습니다.
         </div></details>
 
         <details class="hp-q"><summary>문장부호가 제각각이에요</summary><div>
@@ -559,6 +564,8 @@ const DEFAULT_RULE_SETTINGS = {
   // 기호 통일은 결과의 "모양"만 바꾸는 옵션이라 기본 OFF (기존 결과와 달라지지 않게)
   unifyEllipsis: false,
   unifyQuotes: false,
+  // [v3.3.60] 전각 따옴표(＂ ＇)는 따옴표로 안 읽혀 대사 판단이 통째로 어긋나므로, 켜면 처리 전에 일반 따옴표로 바꿔 읽는다. 글자가 바뀌므로 기본 OFF.
+  fullwidthQuotes: false,
   // 줄 끝/다음 줄 앞에 공백이 없으면 낱말 중간에서 끊긴 것으로 보고 띄어쓰기 없이 붙인다.
   // 원래 공백이 없던 파일에는 낱말이 붙어버리므로 기본 OFF.
   restoreWordBreaks: false,
@@ -647,6 +654,7 @@ const RULE_SETTING_ITEMS = [
     ['splitLongParagraphs', '긴 문단 나누기 — 설명 문단이 아래 기준 글자 수보다 길면 문장이 끝나는 곳에서 여러 문단으로 나눕니다. 대사와 따옴표·괄호 안은 나누지 않고, 글자는 그대로입니다.', '문단 모양'],
     ['unifyEllipsis', '말줄임표 통일 — 점 세 개 이상(...)을 한 글자 …로 바꿉니다.', '기호 모양 통일·바로잡기'],
     ['unifyQuotes', '따옴표 통일 — 둥근 따옴표(“ ” ‘ ’)를 곧은 따옴표(" \')로 바꿉니다.', '기호 모양 통일·바로잡기'],
+    ['fullwidthQuotes', '전각 따옴표 인식 — 넓은 따옴표(＂ ＇)를 쓰는 글에서 대사를 알아보도록 일반 따옴표(" \')로 바꿉니다. 대사가 안 나뉘고 한 문단으로 뭉칠 때 켜세요.', '기호 모양 통일·바로잡기'],
     ['fixFullwidthComma', '이상한 쉼표 고치기 — 한글 글에 섞인 넓은 쉼표(，)를 일반 쉼표(,)로 바꿉니다.', '기호 모양 통일·바로잡기'],
     ['fixReversedQuote', '뒤집힌 따옴표 고치기 — 대사 끝에 잘못 찍힌 여는 따옴표(“ ‘)를 닫는 따옴표(” ’)로 바꿉니다.', '기호 모양 통일·바로잡기'],
     ['fixMixedBrackets', '섞인 괄호 모양 맞추기 — 한 줄 안에서 넓은 괄호와 일반 괄호가 섞인 짝(［…] 등)을 여는 괄호에 맞춥니다.', '기호 모양 통일·바로잡기'],
@@ -2153,7 +2161,10 @@ function processText(raw, opts) {
 
   const warnings = [];
 
-  const rawLines = raw.split(/\r\n|\r|\n/);
+  // [v3.3.60] 전각 따옴표 옵션이 켜져 있으면 읽는 줄만 일반 따옴표로 바꾼다. 원본 줄(origLines)은 따로 두어,
+  // 경고의 '원문'(찾아가기가 같은 줄인지 확인할 때 쓰는 값)이 원본 칸의 글과 계속 같게 한다.
+  const origLines = raw.split(/\r\n|\r|\n/);
+  const rawLines = opts.fullwidthQuotes ? origLines.map((l) => l.replace(/＂/g, '"').replace(/＇/g, "'")) : origLines;
 
   // [v3.3.37] 줄 꺾인 글이면 빈 줄을 무시한다. 이 글에서 빈 줄은 문단 표시가 아니라 꺾인 줄 사이의 군더더기라
   // 지워도 잃는 정보가 없고, 지운 뒤에는 빈 줄이 없는 글과 똑같이(종결부호가 있는 줄에서만 문단을 끊어) 처리된다.
@@ -2191,7 +2202,7 @@ function processText(raw, opts) {
       continue;
     }
 
-    rawByLine.set(rawIndex + 1, rawLine.replace(/^[ \t\u00A0\u3000]+/, ''));
+    rawByLine.set(rawIndex + 1, origLines[rawIndex].replace(/^[ \t\u00A0\u3000]+/, ''));
     // [v3.3.41] 줄 끝(뒤쪽 공백 포함)에 붙은 보이지 않는 글자만 지운다. 줄 중간 글자는 건드리지 않고,
     // 뒤쪽 공백은 그대로 남겨 기존 공백 규칙(rule7 등)이 평소처럼 처리하게 한다.
     let lineText = rawLine.replace(/^[ \t\u00A0\u3000]+/, '');
@@ -2200,6 +2211,7 @@ function processText(raw, opts) {
     }
     lineInfos.push({
       text: lineText,
+      rawOrig: origLines[rawIndex].replace(/^[ \t\u00A0\u3000]+/, ''), // 경고 원문용(원본 그대로)
       leadSpace: /^[ \t\u00A0\u3000]/.test(rawLine),
       // 구간 안에서만: 앞 줄이 짧은 줄이거나 이 줄이 채팅 줄이면 '앞에 빈 줄이 있었던 것'처럼 새 문단으로 본다.
       hadBlankBefore: hadBlankBefore || (shortRegionOn && inWrappedRegion(rawIndex) && (prevLineShort || CHAT_LINE_START_REGEX.test(lineText))),
@@ -2305,7 +2317,7 @@ function processText(raw, opts) {
     currentStartLine = info.lineNo;
     currentTrailSpace = trailSpace;
     currentState = createMergeState(warnings);
-    updateMergeState(currentState, line, info.lineNo, info.text);
+    updateMergeState(currentState, line, info.lineNo, info.rawOrig);
   };
 
   function pushSegment(text, type, lineNo = 0) {
@@ -2421,7 +2433,7 @@ function processText(raw, opts) {
       if (!currentMeta.hasWord && WORD_REGEX.test(piece)) currentMeta.hasWord = true;
       currentTrailSpace = trailSpace;
 
-      updateMergeState(currentState, line, info.lineNo, info.text);
+      updateMergeState(currentState, line, info.lineNo, info.rawOrig);
     }
   }
 
@@ -2431,7 +2443,7 @@ function processText(raw, opts) {
   }
 
   if (segments.length === 0) {
-    attachOcrHints(warnings, rawLines);
+    attachOcrHints(warnings, origLines);
     return { text: '', segmentCount: 0, openWarnings: warnings, autoFixes, wrappedBy };
   }
 
@@ -2555,7 +2567,7 @@ function processText(raw, opts) {
     result += '\n'.repeat(blankLineCount + 1) + b.text;
   }
 
-  attachOcrHints(warnings, rawLines);
+  attachOcrHints(warnings, origLines);
 
   return {
     text: result,
@@ -3564,6 +3576,8 @@ function runProcess(overrides) {
     let message = `처리 완료 — ${segmentCount}개 줄/문단으로 정리됨.`;
     // 자동 판정으로 켜졌을 때만 알린다(사용자가 직접 '항상 켜기'를 고른 경우는 이미 알고 있다).
     if (wrappedBy === 'auto') message += ' (줄 꺾인 글로 판단해 빈 줄을 무시하고 이어 붙임)';
+    // [v3.3.60] 전각 따옴표(＂)가 많은데 옵션이 꺼져 있으면, 대사가 안 읽힌 이유를 알려 준다(보통 줄 꺾인 글로 잘못 판정되어 문단이 뭉침).
+    if (!opts.fullwidthQuotes && (raw.match(/＂/g) || []).length >= 20) message += ' [전각 따옴표(＂)가 많은 글입니다 — 대사가 뭉치면 설정의 "전각 따옴표 인식"을 켜세요]';
     // [v3.3.57] 설정에서 '항상 켜기'·'짧은 줄' 옵션을 켜 둔 채 일반 글을 처리하면 문단이 합쳐지는데, 켜 둔 걸 잊기 쉬워서 알려 준다.
     // 임시 옵션(active)일 때는 이미 따로 알리므로 설정으로 켠 경우에만 붙인다.
     if (!active && (ruleSettings.wrappedFileMode === 'on' || ruleSettings.wrappedShortLineBreak)) message += ' [설정에서 줄 꺾인 글 옵션이 켜져 있음 — 일반 글이면 설정의 "이 묶음 초기화"로 끄세요]';
